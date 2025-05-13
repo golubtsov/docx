@@ -1,21 +1,18 @@
 import * as Y from 'yjs';
 import {WebsocketProvider} from 'y-websocket';
+import {JoinRoomDTO, RoomDTO} from "@/rooms/dto/room.dto";
+import {Injectable} from "@nestjs/common";
+import {DocumentService} from "@docxservice/documentservice";
+import path from "node:path";
+import {YsyncAdapterService} from "@/yjs/ysync.adapter.service";
 
-interface Room {
-    id: string;
-    owner_id: string;
-    doc: Y.Doc;
-    provider: WebsocketProvider;
-    clients: Set<string>; // Store client IDs instead of Socket objects
-    createdAt: Date;
-}
-
+@Injectable()
 export class RoomService {
-    private readonly wsHost: string = 'ws://localhost:4444';
-    private rooms: Map<string, Room> = new Map();
+    private readonly wsHost: string = `ws://localhost:${process.env.YJS_PORT}`;
+    private rooms: Map<string, RoomDTO> = new Map();
     private clientRooms: Map<string, string> = new Map(); // clientId -> roomId
 
-    constructor() {
+    constructor(private readonly documentService: DocumentService) {
         setInterval(() => this.cleanupEmptyRooms(), 60 * 60 * 1000); // Every hour
     }
 
@@ -25,7 +22,7 @@ export class RoomService {
         };
     }
 
-    createRoom(clientId: string): { roomId?: string, message?: string } {
+    async createRoom(clientId: string): Promise<{ roomId?: string, message?: string }> {
         if (this.clientRooms.has(clientId)) {
             return {
                 message: 'Вы подключены к одной комнате, чтобы создать новую, выйдите из первой',
@@ -35,9 +32,10 @@ export class RoomService {
 
         const roomId = this.generateRoomId();
         const ydoc = new Y.Doc();
+        await this.readDocumentTest(ydoc)
         const provider = new WebsocketProvider(this.wsHost, roomId, ydoc);
 
-        const room: Room = {
+        const room: RoomDTO = {
             id: roomId,
             owner_id: clientId,
             doc: ydoc,
@@ -52,27 +50,41 @@ export class RoomService {
         return {roomId};
     }
 
-    joinRoom(clientId: string, roomId: string): {
-        message: string,
-        success: boolean,
-        count_listeners?: number,
-    } {
+    private async readDocumentTest(yDoc: Y.Doc) {
+        await this.documentService.openSystemUri(
+            path.join(__dirname, '../../../data/paragraphs.docx')
+        );
+
+        const adapter = new YsyncAdapterService();
+
+        adapter.serYDoc(yDoc).setDocument(this.documentService.getDocument()).init()
+
+        console.log(yDoc.getMap('root'))
+    }
+
+    joinRoom(clientId: string, roomId: string): JoinRoomDTO {
         if (this.clientRooms.has(clientId)) {
-            return {message: 'Вы уже подключены к данной комнате', success: true};
+            return {
+                success: true,
+                message: 'Вы уже подключены к комнате'
+            };
         }
 
         const room = this.rooms.get(roomId);
         if (!room) {
-            return {message: 'Комната не найдена', success: false};
+            return {
+                success: false,
+                message: 'Комната не найдена'
+            };
         }
 
         room.clients.add(clientId);
         this.clientRooms.set(clientId, roomId);
 
         return {
-            message: 'Вы подключились к комнате',
             success: true,
-            count_listeners: room.clients.size
+            message: 'Вы подключились к комнате',
+            room: room
         };
     }
 
@@ -105,11 +117,13 @@ export class RoomService {
         return true;
     }
 
-    getDocument(clientId: string): Y.Doc | null {
+    getDocument(clientId: string): Y.Doc | null | boolean {
         const roomId = this.clientRooms.get(clientId);
-        if (!roomId) return null;
+
+        if (!roomId) return false;
 
         const room = this.rooms.get(roomId);
+
         return room?.doc || null;
     }
 

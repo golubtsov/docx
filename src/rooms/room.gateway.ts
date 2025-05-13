@@ -1,14 +1,18 @@
 import {
-    WebSocketGateway,
-    WebSocketServer,
     OnGatewayConnection,
     OnGatewayDisconnect,
-    SubscribeMessage
+    SubscribeMessage,
+    WebSocketGateway,
+    WebSocketServer
 } from '@nestjs/websockets';
 import {Server, Socket} from 'socket.io';
 import {RoomService} from './room.service';
 
-@WebSocketGateway(4445, {transports: ['websocket']})
+const WS_PORT = Number(process.env.WS_PORT);
+
+console.log(WS_PORT)
+
+@WebSocketGateway(4000, {transports: ['websocket']})
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     private server: Server;
@@ -29,9 +33,9 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     @SubscribeMessage('createRoom')
-    handleCreateRoom(client: Socket) {
+    async handleCreateRoom(client: Socket) {
         try {
-            const {roomId} = this.roomService.createRoom(client.id);
+            const {roomId} = await this.roomService.createRoom(client.id);
             client.join(roomId);
             client.emit('roomCreated', {roomId});
         } catch (error) {
@@ -44,18 +48,32 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     handleJoinRoom(client: Socket, roomId: string) {
         try {
             const result = this.roomService.joinRoom(client.id, roomId);
+
             if (result.success) {
-                client.join(roomId);
+                if (!client.rooms.has(roomId)) {
+                    client.join(roomId);
+                }
+
                 client.emit('roomJoined', {
-                    roomId, message:
-                    result.message,
-                    count_listeners: result.count_listeners
+                    message: result.message,
+                    room: {
+                        id: result.room.id,
+                        owner_id: result.room.owner_id,
+                        listeners: result.room.clients.size,
+                        // document: result.room.doc.getArray()
+                    }
                 });
             } else {
-                client.emit('joinFailed', {roomId, message: result.message});
+                client.emit('joinFailed', {
+                    message: result.message,
+                    success: false
+                });
             }
         } catch (error) {
-            client.emit('joinError', {message: 'Ошибка при подключении к комнате'});
+            console.error('Join room error:', error);
+            client.emit('joinError', {
+                message: 'Ошибка при подключении к комнате'
+            });
         }
     }
 
@@ -93,8 +111,8 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const doc = this.roomService.getDocument(client.id);
         if (doc) {
             client.emit('documentData', {doc: {'text': 'lalal'}});
-        } else {
-            client.emit('error', {message: 'No document available. Join a room first.'});
+        } else if (!doc) {
+            client.emit('documentData', {message: 'Вы не подключились к комнате'});
         }
     }
 }
