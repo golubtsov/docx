@@ -1,0 +1,17 @@
+services:
+  app:
+    container_name: nestjs_app
+    build: .
+    ports:
+      - "3200:3000"
+      - "4200:4000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: sh -c "npm run y-websocket & npm run start:dev"
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - APP_PORT=${APP_PORT}
+      - WS_PORT=${WS_PORT}
+      - YJS_PORT=${YJS_PORT}
+    restart: unless-stopped
