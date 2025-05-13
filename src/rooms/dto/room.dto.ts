@@ -9,9 +9,3 @@ export interface RoomDTO {
     clients: Set<string>; // client IDs
     createdAt: Date;
 }
-
-export interface JoinRoomDTO {
-    success: boolean;
-    room?: RoomDTO;
-    message?: string;
-}

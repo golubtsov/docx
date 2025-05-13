@@ -21,7 +21,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     handleConnection(client: Socket) {
-        const response = this.roomService.handleConnection(client.id);
+        const response = this.roomService.handleConnection();
         client.emit('connectionSuccess', response);
     }
 
@@ -35,11 +35,11 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage('createRoom')
     async handleCreateRoom(client: Socket) {
         try {
-            const {roomId} = await this.roomService.createRoom(client.id);
-            client.join(roomId);
-            client.emit('roomCreated', {roomId});
-        } catch (error) {
-            console.log(error)
+            const createRoomResponse = await this.roomService.createRoom(client.id);
+            client.join(createRoomResponse.roomName);
+            client.emit('roomCreated', createRoomResponse);
+        } catch (error: any) {
+            console.log(error.message)
             client.emit('error', {message: 'Ошибка создания комнаты'});
         }
     }
@@ -69,8 +69,8 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
                     success: false
                 });
             }
-        } catch (error) {
-            console.error('Join room error:', error);
+        } catch (error: any) {
+            console.error('Join room error:', error.message);
             client.emit('joinError', {
                 message: 'Ошибка при подключении к комнате'
             });
@@ -103,16 +103,6 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
             client.emit('roomDeletedSuccess', {roomId, message: 'Комната удалена'});
         } else {
             client.emit('deleteRoomFailed', {roomId, message: 'Не получилось удалить комнату'});
-        }
-    }
-
-    @SubscribeMessage('getDocument')
-    handleGetDocument(client: Socket) {
-        const doc = this.roomService.getDocument(client.id);
-        if (doc) {
-            client.emit('documentData', {doc: {'text': 'lalal'}});
-        } else if (!doc) {
-            client.emit('documentData', {message: 'Вы не подключились к комнате'});
         }
     }
 }
