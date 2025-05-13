@@ -6,6 +6,12 @@ git clone  https://gitlab.els24.com/epicdoc/editorlibrary.git packages/editorlib
 npm i
 ```
 
+Команда для запуска сервера, который отвечает за синхронизацию YJS
 ```
-PORT=4444 node ./node_modules/y-webrtc/bin/server.js
+npm run y-websocket
 ```
+
+Эти команды должны работать одновременно
+
+- ``npm run start:dev``
+- ``npm run y-websocket``

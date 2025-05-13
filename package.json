@@ -10,7 +10,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test": "jest --config ./jest-e2e.json --detectOpenHandles"
+    "test": "jest --config ./jest-e2e.json --detectOpenHandles",
+    "y-websocket": "HOST=localhost PORT=5000 npx y-websocket"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
