@@ -1,12 +1,15 @@
 import {NestFactory} from '@nestjs/core';
 import {AppModule} from './app.module';
 import 'module-alias/register.js';
+import {AppEnvironment} from "@/common/app.environment";
 
 async function bootstrap() {
+    const appPort = AppEnvironment.getAppPort();
+    const wsPort = AppEnvironment.getWsPort();
     const app = await NestFactory.create(AppModule);
-    await app.listen(process.env.APP_PORT);
-    console.log('Приложение запущено на', process.env.APP_PORT, 'порту')
-    console.log('WS запущен на', process.env.WS_PORT, 'порту')
+    await app.listen(appPort);
+    console.log('Приложение запущено на', appPort, 'порту')
+    console.log('WS запущен на', wsPort, 'порту')
 }
 
 bootstrap();

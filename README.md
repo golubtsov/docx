@@ -1,10 +1,17 @@
+## Запуск проекта    
 ```
 git clone  https://gitlab.els24.com/epicdoc/docxservice.git packages/docxservice
 
-git clone  https://gitlab.els24.com/epicdoc/editorlibrary.git packages/editorlibrary
+docker compose up -d
+```
 
+В контейнере
+
+```
 npm i
 ```
+
+## Общее
 
 Команда для запуска сервера, который отвечает за синхронизацию YJS
 ```

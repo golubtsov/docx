@@ -7,12 +7,11 @@ import {
 } from '@nestjs/websockets';
 import {Server, Socket} from 'socket.io';
 import {RoomService} from './room.service';
+import {AppEnvironment} from "@/common/app.environment";
 
-const WS_PORT = Number(process.env.WS_PORT);
 
-console.log(WS_PORT)
 
-@WebSocketGateway(4000, {transports: ['websocket']})
+@WebSocketGateway(AppEnvironment.getWsPort(), {transports: ['websocket']})
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     private server: Server;
@@ -36,7 +35,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     async handleCreateRoom(client: Socket) {
         try {
             const createRoomResponse = await this.roomService.createRoom(client.id);
-            client.join(createRoomResponse.roomName);
+            client.join(createRoomResponse.roomId);
             client.emit('roomCreated', createRoomResponse);
         } catch (error: any) {
             console.log(error.message)
@@ -79,30 +78,23 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage('leaveRoom')
     handleLeaveRoom(client: Socket) {
-        const result = this.roomService.leaveRoom(client.id);
-        if (result.success) {
-            client.leave(result.roomId);
-            client.emit('roomLeft', {
-                roomId: result.roomId,
-                success: result.success,
-                message: result.message
-            });
+        const response = this.roomService.leaveRoom(client.id);
+        if (response.success) {
+            client.leave(response.roomId);
+            client.emit('roomLeft', response);
         } else {
-            client.emit('roomLeft', {
-                message: result.message,
-                success: result.success
-            });
+            client.emit('roomLeft', response);
         }
     }
 
     @SubscribeMessage('deleteRoom')
     handleDeleteRoom(client: Socket, roomId: string) {
-        const success = this.roomService.deleteRoom(roomId);
-        if (success) {
+        const response = this.roomService.deleteRoom(roomId, client.id);
+        if (response.success) {
             this.server.socketsLeave(roomId);
-            client.emit('roomDeletedSuccess', {roomId, message: 'Комната удалена'});
+            client.emit('roomDeletedSuccess', response);
         } else {
-            client.emit('deleteRoomFailed', {roomId, message: 'Не получилось удалить комнату'});
+            client.emit('deleteRoomFailed', response);
         }
     }
 }

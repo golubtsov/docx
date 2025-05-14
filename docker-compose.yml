@@ -5,9 +5,10 @@ services:
     ports:
       - "3200:3000"
       - "4200:4000"
+      - "5200:5000"
     volumes:
       - .:/usr/src/app
-      - /usr/src/app/node_modules
+      - ./node_modules:/usr/src/app/node_modules
     command: sh -c "npm run y-websocket & npm run start:dev"
     environment:
       - NODE_ENV=${NODE_ENV}

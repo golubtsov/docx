@@ -1,5 +1,5 @@
 export interface CreateRoomResponse {
-    roomName?: string;
+    roomId?: string;
     message?: string;
     host?: string;
 }

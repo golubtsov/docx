@@ -7,10 +7,14 @@ import path from "node:path";
 import {YsyncAdapterService} from "@/yjs/ysync.adapter.service";
 import {JoinRoomResponse} from "@/rooms/responses/join.room.response";
 import {Injectable} from "@nestjs/common";
+import {DeleteRoomResponse} from "@/rooms/responses/delete.room.response";
+import {LeaveRoomResponse} from "@/rooms/responses/leave.room.response";
+import {AppStateEnum} from "@/common/app.state.enum";
+import {AppEnvironment} from "@/common/app.environment";
 
 @Injectable()
 export class RoomManager {
-    private readonly wsHost: string = `ws://localhost:${process.env.YJS_PORT}`;
+    private readonly wsHost: string = `ws://localhost:${AppEnvironment.getWsPort()}`;
 
     private rooms = new Map<string, RoomDTO>();
 
@@ -26,11 +30,11 @@ export class RoomManager {
         }
 
         const roomId = this.generateRoomId();
-        const {ydoc, provider} = await this.initializeYDoc(roomId);
+        const {provider} = await this.initializeYDoc(roomId);
 
         try {
             await this.establishConnection(provider);
-            this.registerRoom(roomId, clientId, ydoc, provider);
+            this.registerRoom(roomId, clientId, provider);
             return this.successfulCreationResponse(roomId);
         } catch (error) {
             return this.handleCreationError(error);
@@ -44,12 +48,14 @@ export class RoomManager {
     private clientAlreadyInRoomResponse(): CreateRoomResponse {
         return {
             message: 'Вы подключены к одной комнате, чтобы создать новую, выйдите из первой',
-            roomName: undefined
+            roomId: undefined
         };
     }
 
     private generateRoomId(): string {
-        return '1111'
+        if (AppEnvironment.getNodeEnv() === AppStateEnum.Development) {
+            return '1111'
+        }
         return Math.random().toString(36).substring(2, 8);
     }
 
@@ -94,16 +100,13 @@ export class RoomManager {
     private registerRoom(
         roomId: string,
         clientId: string,
-        ydoc: Doc,
         provider: WebsocketProvider
     ): void {
         const room: RoomDTO = {
             id: roomId,
             owner_id: clientId,
-            doc: ydoc,
             provider,
             clients: new Set([clientId]),
-            createdAt: new Date()
         };
 
         this.rooms.set(roomId, room);
@@ -111,7 +114,7 @@ export class RoomManager {
     }
 
     private successfulCreationResponse(roomId: string): CreateRoomResponse {
-        return {roomName: roomId, host: this.wsHost};
+        return {roomId, host: this.wsHost};
     }
 
     private handleCreationError(error: any): CreateRoomResponse {
@@ -150,16 +153,12 @@ export class RoomManager {
         return this.rooms.get(roomId);
     }
 
-    leaveRoom(clientId: string) {
+    leaveRoom(clientId: string): LeaveRoomResponse {
         const roomId = this.clientRooms.get(clientId);
-        if (!roomId) return {success: false, message: 'У пользователя нет комнат'};
+        if (!roomId) return {success: false, roomId, message: 'У пользователя нет комнат'};
 
         const room = this.rooms.get(roomId);
-        if (!room) return {success: false, message: 'Комната не найдена'};
-
-        if (room.owner_id !== clientId) {
-            return {success: false, roomId, message: 'Вы не можете удалить комнату'};
-        }
+        if (!room) return {success: false, roomId, message: 'Комната не найдена'};
 
         room.clients.delete(clientId);
         this.clientRooms.delete(clientId);
@@ -167,21 +166,34 @@ export class RoomManager {
         return {success: true, roomId, message: 'Вы покинули комнату'};
     }
 
-    deleteRoom(roomId: string): boolean {
+    deleteRoom(roomId: string, clientId: string): DeleteRoomResponse {
         const room = this.rooms.get(roomId);
-        if (!room) return false;
+        if (!room) return {
+            success: false,
+            message: 'Комната не найдена'
+        };
+
+        if (room.owner_id !== clientId) {
+            return {
+                success: false,
+                message: 'Вы не можете удалить комнату'
+            };
+        }
 
         room.provider.destroy();
         this.rooms.delete(roomId);
         room.clients.forEach(clientId => this.clientRooms.delete(clientId));
 
-        return true;
+        return {
+            success: true,
+            message: 'Комната удалена'
+        };
     }
 
     private cleanupEmptyRooms() {
         for (const [roomId, room] of this.rooms) {
             if (room.clients.size === 0) {
-                this.deleteRoom(roomId);
+                this.deleteRoom(roomId, room.owner_id);
             }
         }
     }
