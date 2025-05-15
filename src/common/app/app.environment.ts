@@ -23,9 +23,6 @@ export class AppEnvironment {
     }
 
     static getYJSPort() {
-        if (AppEnvironment.NODE_ENV === AppStateEnum.Jest) {
-            return AppEnvironment.YJS_PORT;
-        }
         return AppEnvironment.YJS_PORT;
     }
 
