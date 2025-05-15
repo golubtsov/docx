@@ -1,12 +1,20 @@
-import { Test } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import { IoAdapter } from '@nestjs/platform-socket.io';
-import * as io from 'socket.io-client';
+import {Test} from '@nestjs/testing';
+import {INestApplication} from '@nestjs/common';
+import {IoAdapter} from '@nestjs/platform-socket.io';
+import {io} from "socket.io-client";
 import {RoomGateway} from "@/rooms/room.gateway";
 import {RoomModule} from "@/rooms/room.module";
-import {AppEnvironment} from "@/common/app.environment";
+import {AppEnvironment} from "@/common/app/app.environment";
+import {CreateRoomResponse} from "@/rooms/responses/create.room.response";
 
 describe('RoomGateway', () => {
+    const socket = io(`ws://localhost:${AppEnvironment.getWsPort()}`, {
+        transports: ["websocket"],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 5000,
+    });
+
     let app: INestApplication;
     let gateway: RoomGateway;
 
@@ -17,10 +25,13 @@ describe('RoomGateway', () => {
 
         app = moduleRef.createNestApplication();
         app.useWebSocketAdapter(new IoAdapter(app));
+        await app.init();
         await app.listen(AppEnvironment.getAppPort());
 
         gateway = moduleRef.get<RoomGateway>(RoomGateway);
-    });
+    }, 10000);
+
+    afterEach(() => {});
 
     afterAll(async () => {
         await app.close();
@@ -31,20 +42,18 @@ describe('RoomGateway', () => {
     });
 
     it('create room', (done) => {
-        const socket = io.connect(
-            `http://localhost:${AppEnvironment.getWsPort()}`,
-            {
-                reconnection: false,
-                timeout: 5000
-            }
-        );
-
-        socket.on('roomCreated', (response) => {
-            expect(response.success).toBe(true);
-            socket.disconnect();
+        socket.on("roomCreated", (response: CreateRoomResponse) => {
+            socket.disconnect()
+            expect(response).toHaveProperty('roomId')
+            expect(response).toHaveProperty('host')
             done();
         });
 
         socket.emit('createRoom');
-    });
+
+        socket.on('error', (err) => {
+            console.log('error', err)
+            done(err);
+        });
+    }, 10000);
 });

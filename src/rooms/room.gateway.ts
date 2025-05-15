@@ -7,8 +7,7 @@ import {
 } from '@nestjs/websockets';
 import {Server, Socket} from 'socket.io';
 import {RoomService} from './room.service';
-import {AppEnvironment} from "@/common/app.environment";
-
+import {AppEnvironment} from "@/common/app/app.environment";
 
 
 @WebSocketGateway(AppEnvironment.getWsPort(), {transports: ['websocket']})
@@ -38,7 +37,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
             client.join(createRoomResponse.roomId);
             client.emit('roomCreated', createRoomResponse);
         } catch (error: any) {
-            console.log(error.message)
+            console.log(error)
             client.emit('error', {message: 'Ошибка создания комнаты'});
         }
     }

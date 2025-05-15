@@ -4,17 +4,17 @@ import {RoomDTO} from "@/rooms/dto/room.dto";
 import {CreateRoomResponse} from "@/rooms/responses/create.room.response";
 import {DocumentService} from "@docxservice/documentservice";
 import path from "node:path";
-import {YsyncAdapterService} from "@/yjs/ysync.adapter.service";
+import {YsyncAdapterService} from "@/common/yjs/ysync.adapter.service";
 import {JoinRoomResponse} from "@/rooms/responses/join.room.response";
 import {Injectable} from "@nestjs/common";
 import {DeleteRoomResponse} from "@/rooms/responses/delete.room.response";
 import {LeaveRoomResponse} from "@/rooms/responses/leave.room.response";
-import {AppStateEnum} from "@/common/app.state.enum";
-import {AppEnvironment} from "@/common/app.environment";
+import {AppStateEnum} from "@/common/app/app.state.enum";
+import {AppEnvironment} from "@/common/app/app.environment";
 
 @Injectable()
 export class RoomManager {
-    private readonly wsHost: string = `ws://localhost:${AppEnvironment.getWsPort()}`;
+    private readonly Y_HOST: string = `ws://localhost:${AppEnvironment.getYJSPort()}`;
 
     private rooms = new Map<string, RoomDTO>();
 
@@ -67,7 +67,7 @@ export class RoomManager {
         await this.putDocumentToYDoc(ydoc);
 
         const provider = new WebsocketProvider(
-            this.wsHost,
+            this.Y_HOST,
             roomId,
             ydoc,
             {WebSocketPolyfill: WebSocket}
@@ -79,8 +79,10 @@ export class RoomManager {
     private async putDocumentToYDoc(ydoc: Doc) {
         const documentService = new DocumentService();
 
+        console.log(path.join(process.cwd()))
+
         await documentService.openSystemUri(
-            path.join(__dirname, '../../../data/paragraphs.docx')
+            path.join(process.cwd(), './data/paragraphs.docx')
         );
 
         const adapter = new YsyncAdapterService();
@@ -114,7 +116,7 @@ export class RoomManager {
     }
 
     private successfulCreationResponse(roomId: string): CreateRoomResponse {
-        return {roomId, host: this.wsHost};
+        return {roomId, host: this.Y_HOST};
     }
 
     private handleCreationError(error: any): CreateRoomResponse {
