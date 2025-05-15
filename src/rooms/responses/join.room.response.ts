@@ -1,4 +1,4 @@
-import {RoomDTO} from "@/rooms/dto/room.dto";
+import { RoomDTO } from '@/rooms/dto/room.dto';
 
 export interface JoinRoomResponse {
     success: boolean;

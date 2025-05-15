@@ -36,7 +36,7 @@ export class YsyncAdapterService {
 
         // Синхронизация дочерних элементов
         const yChildren = new Y.Array();
-        node.childNodes.forEach(child => {
+        node.childNodes.forEach((child) => {
             const yChild = new Y.Map();
             this.syncNodeToY(child, yChild);
             yChildren.push([yChild]);
@@ -53,8 +53,8 @@ export class YsyncAdapterService {
     }
 
     private setupYjsListener() {
-        this.yRoot.observeDeep(events => {
-            events.forEach(event => {
+        this.yRoot.observeDeep((events) => {
+            events.forEach((event) => {
                 const target = event.target as Y.Map<any>;
                 event.changes.keys.forEach((change, key) => {
                     const node = this.model.getElementById(target.get('id'));

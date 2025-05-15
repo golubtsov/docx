@@ -1,4 +1,4 @@
-import {AppStateEnum} from "@/common/app/app.state.enum";
+import { AppStateEnum } from '@/common/app/app.state.enum';
 
 export class AppEnvironment {
     private static NODE_ENV = process.env.NODE_ENV;

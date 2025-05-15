@@ -1,18 +1,18 @@
-import {Injectable} from "@nestjs/common";
-import {RoomManager} from "@/rooms/room.manager";
-import {CreateRoomResponse} from "@/rooms/responses/create.room.response";
-import {JoinRoomResponse} from "@/rooms/responses/join.room.response";
-import {DeleteRoomResponse} from "@/rooms/responses/delete.room.response";
-import {LeaveRoomResponse} from "@/rooms/responses/leave.room.response";
+import { Injectable } from '@nestjs/common';
+import { RoomManager } from '@/rooms/room.manager';
+import { CreateRoomResponse } from '@/rooms/responses/create.room.response';
+import { JoinRoomResponse } from '@/rooms/responses/join.room.response';
+import { DeleteRoomResponse } from '@/rooms/responses/delete.room.response';
+import { LeaveRoomResponse } from '@/rooms/responses/leave.room.response';
 
 @Injectable()
 export class RoomService {
-
     constructor(private readonly roomManager: RoomManager) {}
 
     handleConnection() {
         return {
-            message: 'Successfully connected. Use createRoom or joinRoom commands.'
+            message:
+                'Successfully connected. Use createRoom or joinRoom commands.',
         };
     }
 

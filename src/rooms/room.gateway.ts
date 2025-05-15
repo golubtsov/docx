@@ -3,20 +3,18 @@ import {
     OnGatewayDisconnect,
     SubscribeMessage,
     WebSocketGateway,
-    WebSocketServer
+    WebSocketServer,
 } from '@nestjs/websockets';
-import {Server, Socket} from 'socket.io';
-import {RoomService} from './room.service';
-import {AppEnvironment} from "@/common/app/app.environment";
+import { Server, Socket } from 'socket.io';
+import { RoomService } from './room.service';
+import { AppEnvironment } from '@/common/app/app.environment';
 
-
-@WebSocketGateway(AppEnvironment.getWsPort(), {transports: ['websocket']})
+@WebSocketGateway(AppEnvironment.getWsPort(), { transports: ['websocket'] })
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     private server: Server;
 
-    constructor(private readonly roomService: RoomService) {
-    }
+    constructor(private readonly roomService: RoomService) {}
 
     handleConnection(client: Socket) {
         const response = this.roomService.handleConnection();
@@ -26,19 +24,23 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     handleDisconnect(client: Socket) {
         const leaveResult = this.roomService.leaveRoom(client.id);
         if (leaveResult.success) {
-            this.server.to(leaveResult.roomId).emit('userLeft', {clientId: client.id});
+            this.server
+                .to(leaveResult.roomId)
+                .emit('userLeft', { clientId: client.id });
         }
     }
 
     @SubscribeMessage('createRoom')
     async handleCreateRoom(client: Socket) {
         try {
-            const createRoomResponse = await this.roomService.createRoom(client.id);
+            const createRoomResponse = await this.roomService.createRoom(
+                client.id,
+            );
             client.join(createRoomResponse.roomId);
             client.emit('roomCreated', createRoomResponse);
         } catch (error: any) {
-            console.log(error)
-            client.emit('error', {message: 'Ошибка создания комнаты'});
+            console.log(error);
+            client.emit('error', { message: 'Ошибка создания комнаты' });
         }
     }
 
@@ -59,18 +61,18 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
                         owner_id: result.room.owner_id,
                         listeners: result.room.clients.size,
                         // document: result.room.doc.getArray()
-                    }
+                    },
                 });
             } else {
                 client.emit('joinFailed', {
                     message: result.message,
-                    success: false
+                    success: false,
                 });
             }
         } catch (error: any) {
             console.error('Join room error:', error.message);
             client.emit('joinError', {
-                message: 'Ошибка при подключении к комнате'
+                message: 'Ошибка при подключении к комнате',
             });
         }
     }

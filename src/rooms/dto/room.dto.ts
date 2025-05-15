@@ -1,4 +1,4 @@
-import {WebsocketProvider} from "y-websocket";
+import { WebsocketProvider } from 'y-websocket';
 
 export interface RoomDTO {
     id: string;
