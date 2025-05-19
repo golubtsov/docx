@@ -11,6 +11,7 @@ import { DeleteRoomResponse } from '@/rooms/responses/delete.room.response';
 import { LeaveRoomResponse } from '@/rooms/responses/leave.room.response';
 import { AppStateEnum } from '@/common/app/app.state.enum';
 import { AppEnvironment } from '@/common/app/app.environment';
+import { polyglot } from '@/common/lang/polyglot';
 
 @Injectable()
 export class RoomManager {
@@ -47,8 +48,7 @@ export class RoomManager {
 
     private clientAlreadyInRoomResponse(): CreateRoomResponse {
         return {
-            message:
-                'Вы подключены к одной комнате, чтобы создать новую, выйдите из первой',
+            message: polyglot.t('room.error.multiple'),
             roomId: undefined,
         };
     }
@@ -76,8 +76,6 @@ export class RoomManager {
 
     private async putDocumentToYDoc(ydoc: Doc) {
         const documentService = new DocumentService();
-
-        console.log(path.join(process.cwd()));
 
         await documentService.openSystemUri(
             path.join(process.cwd(), './data/paragraphs.docx'),
@@ -121,14 +119,14 @@ export class RoomManager {
 
     private handleCreationError(error: any): CreateRoomResponse {
         console.error('Room creation failed:', error.message);
-        return { message: 'Не удалось создать комнату' };
+        return { message: polyglot.t('room.error.create') };
     }
 
     joinRoom(clientId: string, roomId: string): JoinRoomResponse {
         if (this.isClientInRoom(clientId)) {
             return {
                 success: true,
-                message: 'Вы уже подключены к комнате',
+                message: polyglot.t('room.connected_already'),
             };
         }
 
@@ -137,7 +135,7 @@ export class RoomManager {
         if (!room) {
             return {
                 success: false,
-                message: 'Комната не найдена',
+                message: polyglot.t('room.error.not_found'),
             };
         }
 
@@ -146,7 +144,7 @@ export class RoomManager {
 
         return {
             success: true,
-            message: 'Вы подключились к комнате',
+            message: polyglot.t('room.connected'),
             room: room,
         };
     }
@@ -161,17 +159,21 @@ export class RoomManager {
             return {
                 success: false,
                 roomId,
-                message: 'У пользователя нет комнат',
+                message: polyglot.t('room.user_not_have_rooms'),
             };
 
         const room = this.rooms.get(roomId);
         if (!room)
-            return { success: false, roomId, message: 'Комната не найдена' };
+            return {
+                success: false,
+                roomId,
+                message: polyglot.t('room.error.not_found'),
+            };
 
         room.clients.delete(clientId);
         this.clientRooms.delete(clientId);
 
-        return { success: true, roomId, message: 'Вы покинули комнату' };
+        return { success: true, roomId, message: polyglot.t('room.left') };
     }
 
     deleteRoom(roomId: string, clientId: string): DeleteRoomResponse {
@@ -179,13 +181,13 @@ export class RoomManager {
         if (!room)
             return {
                 success: false,
-                message: 'Комната не найдена',
+                message: polyglot.t('room.error.not_found'),
             };
 
         if (room.owner_id !== clientId) {
             return {
                 success: false,
-                message: 'Вы не можете удалить комнату',
+                message: polyglot.t('room.cant_delete_room'),
             };
         }
 
@@ -195,7 +197,7 @@ export class RoomManager {
 
         return {
             success: true,
-            message: 'Комната удалена',
+            message: polyglot.t('room.deleted'),
         };
     }
 

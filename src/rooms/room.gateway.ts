@@ -8,6 +8,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { RoomService } from './room.service';
 import { AppEnvironment } from '@/common/app/app.environment';
+import { polyglot } from '@/common/lang/polyglot';
 
 @WebSocketGateway(AppEnvironment.getWsPort(), { transports: ['websocket'] })
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -40,7 +41,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
             client.emit('roomCreated', createRoomResponse);
         } catch (error: any) {
             console.log(error);
-            client.emit('error', { message: 'Ошибка создания комнаты' });
+            client.emit('error', { message: polyglot.t('room.error.create') });
         }
     }
 
@@ -72,7 +73,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         } catch (error: any) {
             console.error('Join room error:', error.message);
             client.emit('joinError', {
-                message: 'Ошибка при подключении к комнате',
+                message: polyglot.t('room.error.join'),
             });
         }
     }

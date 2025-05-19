@@ -1,3 +1,4 @@
+import { polyglot } from '@/common/lang/polyglot';
 import { Injectable } from '@nestjs/common';
 import { RoomManager } from '@/rooms/room.manager';
 import { CreateRoomResponse } from '@/rooms/responses/create.room.response';
@@ -11,8 +12,7 @@ export class RoomService {
 
     handleConnection() {
         return {
-            message:
-                'Successfully connected. Use createRoom or joinRoom commands.',
+            message: polyglot.t('ws_connect'),
         };
     }
 
