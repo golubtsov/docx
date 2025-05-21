@@ -30,12 +30,13 @@ export class RoomManager {
             return this.clientAlreadyInRoomResponse();
         }
 
-        const roomId = this.generateRoomId();
-        const { provider } = await this.initializeYDoc(roomId);
-
         try {
+            const roomId = this.generateRoomId();
+            const { provider } = await this.initializeYDoc(roomId);
+
             await this.establishConnection(provider);
             this.registerRoom(roomId, clientId, provider);
+
             return this.successfulCreationResponse(roomId);
         } catch (error) {
             return this.handleCreationError(error);
