@@ -7,10 +7,12 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { RoomService } from './room.service';
-import { AppEnvironment } from '@/common/app/app.environment';
 import { polyglot } from '@/common/lang/polyglot';
 
-@WebSocketGateway(AppEnvironment.getWsPort(), { transports: ['websocket'] })
+// Используется process, потому что AppEnvironment не может быть здесь использован.
+// В остальных случаях, внутри классов, лучше использовать обертку AppEnvironment,
+// Через внедрение AppEnvironment в constructor
+@WebSocketGateway(Number(process.env.WS_PORT), { transports: ['websocket'] })
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     private server: Server;
@@ -61,7 +63,6 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
                         id: result.room.id,
                         owner_id: result.room.owner_id,
                         listeners: result.room.clients.size,
-                        // document: result.room.doc.getArray()
                     },
                 });
             } else {

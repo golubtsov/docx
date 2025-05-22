@@ -10,9 +10,13 @@ import { polyglot } from '@/common/lang/polyglot';
 import { JoinRoomResponse } from '@/rooms/responses/join.room.response';
 import { LeaveRoomResponse } from '@/rooms/responses/leave.room.response';
 import { DeleteRoomResponse } from '@/rooms/responses/delete.room.response';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AppEnvironmentModule } from '@/common/app/app.environment.module';
+
+const appEnv = new AppEnvironment(new ConfigService());
 
 function createSocket() {
-    return io(`ws://localhost:${AppEnvironment.getWsPort()}`, {
+    return io(`ws://localhost:${appEnv.getWsPort()}`, {
         transports: ['websocket'],
         reconnection: true,
         reconnectionAttempts: 5,
@@ -26,13 +30,17 @@ describe('RoomGateway', () => {
 
     beforeAll(async () => {
         const moduleRef = await Test.createTestingModule({
-            imports: [RoomModule],
+            imports: [
+                await ConfigModule.forRoot({ isGlobal: true }),
+                AppEnvironmentModule,
+                RoomModule,
+            ],
         }).compile();
 
         app = moduleRef.createNestApplication();
         app.useWebSocketAdapter(new IoAdapter(app));
         await app.init();
-        await app.listen(AppEnvironment.getAppPort());
+        await app.listen(appEnv.getAppPort());
 
         gateway = moduleRef.get<RoomGateway>(RoomGateway);
     });

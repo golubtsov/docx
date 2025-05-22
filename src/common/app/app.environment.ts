@@ -1,32 +1,49 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AppStateEnum } from '@/common/app/app.state.enum';
 
+@Injectable()
 export class AppEnvironment {
-    private static NODE_ENV = process.env.NODE_ENV;
-    private static APP_PORT = Number(process.env.APP_PORT);
-    private static YJS_PORT = Number(process.env.YJS_PORT);
-    private static WS_PORT = Number(process.env.WS_PORT);
-    private static WS_PORT_TEST = 4500;
-    private static APP_PORT_TEST = 3500;
+    constructor(private readonly configService: ConfigService) {}
 
-    static getWsPort() {
-        if (AppEnvironment.NODE_ENV === AppStateEnum.Jest) {
-            return AppEnvironment.WS_PORT_TEST;
+    private get nodeEnv(): string {
+        return this.configService.get<string>('NODE_ENV');
+    }
+
+    private get appPort(): number {
+        return this.configService.get<number>('APP_PORT');
+    }
+
+    private get yjsPort(): number {
+        return this.configService.get<number>('YJS_PORT');
+    }
+
+    private get wsPort(): number {
+        return this.configService.get<number>('WS_PORT');
+    }
+
+    private readonly WS_PORT_TEST = 4500;
+    private readonly APP_PORT_TEST = 3500;
+
+    getWsPort(): number {
+        if (this.nodeEnv === AppStateEnum.Jest) {
+            return this.WS_PORT_TEST;
         }
-        return AppEnvironment.WS_PORT;
+        return this.wsPort;
     }
 
-    static getAppPort() {
-        if (AppEnvironment.NODE_ENV === AppStateEnum.Jest) {
-            return AppEnvironment.APP_PORT_TEST;
+    getAppPort(): number {
+        if (this.nodeEnv === AppStateEnum.Jest) {
+            return this.APP_PORT_TEST;
         }
-        return AppEnvironment.APP_PORT;
+        return this.appPort;
     }
 
-    static getYJSPort() {
-        return AppEnvironment.YJS_PORT;
+    getYJSPort(): number {
+        return this.yjsPort;
     }
 
-    static getNodeEnv() {
-        return AppEnvironment.NODE_ENV;
+    getNodeEnv(): string {
+        return this.nodeEnv;
     }
 }

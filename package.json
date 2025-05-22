@@ -11,9 +11,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test": "NODE_ENV=jest jest --config ./jest-e2e.json --no-cache --detectOpenHandles --forceExit --",
-    "y-websocket": "HOST=localhost PORT=${YJS_PORT} npx y-websocket",
+    "y-websocket": "HOST=0.0.0.0 PORT=${YJS_PORT} npx y-websocket",
     "prettier": "npx prettier --write .",
-    "prettier:check": "npx prettier --check ."
+    "prettier:check": "npx prettier --check .",
+    "ports": "netstat -tuln"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",

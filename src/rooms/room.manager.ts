@@ -15,13 +15,13 @@ import { polyglot } from '@/common/lang/polyglot';
 
 @Injectable()
 export class RoomManager {
-    private readonly Y_HOST: string = `ws://localhost:${AppEnvironment.getYJSPort()}`;
+    private readonly Y_HOST: string = `ws://localhost:${this.appEnv.getYJSPort()}`;
 
     private rooms = new Map<string, RoomDTO>();
 
     private clientRooms = new Map<string, string>();
 
-    constructor() {
+    constructor(private readonly appEnv: AppEnvironment) {
         setInterval(() => this.cleanupEmptyRooms(), 60 * 60 * 1000); // Every hour
     }
 
@@ -55,7 +55,7 @@ export class RoomManager {
     }
 
     private generateRoomId(): string {
-        if (AppEnvironment.getNodeEnv() === AppStateEnum.Development) {
+        if (this.appEnv.getNodeEnv() === AppStateEnum.Development) {
             return '1111';
         }
         return Math.random().toString(36).substring(2, 8);
@@ -76,15 +76,16 @@ export class RoomManager {
     }
 
     private async putDocumentToYDoc(ydoc: Doc) {
-        const documentService = new DocumentService();
+        // временно убрал чтение документа
+        // const documentService = new DocumentService();
+        //
+        // await documentService.openSystemUri(
+        //     path.join(process.cwd(), './data/paragraphs.docx'),
+        // );
+        //const adapter = new YsyncAdapterService();
+        //adapter.init(ydoc, documentService.getDocument());
 
-        await documentService.openSystemUri(
-            path.join(process.cwd(), './data/paragraphs.docx'),
-        );
-
-        const adapter = new YsyncAdapterService();
-
-        adapter.init(ydoc, documentService.getDocument());
+        ydoc.getMap('root').set('key', 'some value');
     }
 
     private async establishConnection(
