@@ -1,0 +1,17 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Version {
+  id        Int      @id @default(autoincrement())
+  file_id   Int
+  snapshot  Bytes
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}

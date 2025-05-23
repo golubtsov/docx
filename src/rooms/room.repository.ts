@@ -14,7 +14,7 @@ import { AppEnvironment } from '@/common/app/app.environment';
 import { polyglot } from '@/common/lang/polyglot';
 
 @Injectable()
-export class RoomManager {
+export class RoomRepository {
     private readonly Y_HOST: string = `ws://localhost:${this.appEnv.getYJSPort()}`;
 
     private rooms = new Map<string, RoomDTO>();

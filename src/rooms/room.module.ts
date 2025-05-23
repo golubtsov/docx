@@ -3,7 +3,7 @@ import { RoomGateway } from '@/rooms/room.gateway';
 import { RoomService } from '@/rooms/room.service';
 import { DocumentService } from '@docxservice/documentservice';
 import { YsyncAdapterService } from '@/common/yjs/ysync.adapter.service';
-import { RoomManager } from '@/rooms/room.manager';
+import { RoomRepository } from '@/rooms/room.repository';
 import { AppEnvironment } from '@/common/app/app.environment';
 
 @Module({
@@ -13,7 +13,8 @@ import { AppEnvironment } from '@/common/app/app.environment';
         RoomService,
         DocumentService,
         YsyncAdapterService,
-        RoomManager,
+        RoomRepository,
     ],
+    exports: [RoomService, RoomRepository],
 })
 export class RoomModule {}

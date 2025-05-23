@@ -16,12 +16,24 @@ import { AppEnvironmentModule } from '@/common/app/app.environment.module';
 const appEnv = new AppEnvironment(new ConfigService());
 
 function createSocket() {
-    return io(`ws://localhost:${appEnv.getWsPort()}`, {
-        transports: ['websocket'],
+    const socket = io(`http://localhost:${appEnv.getWsPort()}`, {
+        path: '/rooms/socket.io',
+        transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 5000,
+        autoConnect: true,
+        forceNew: true,
+        query: {
+            test: true,
+        },
     });
+
+    socket.on('connect_error', (err) => {
+        console.error('Connection error:', err.message);
+    });
+
+    return socket;
 }
 
 describe('RoomGateway', () => {

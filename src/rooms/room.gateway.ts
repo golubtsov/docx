@@ -1,6 +1,4 @@
 import {
-    OnGatewayConnection,
-    OnGatewayDisconnect,
     SubscribeMessage,
     WebSocketGateway,
     WebSocketServer,
@@ -8,20 +6,21 @@ import {
 import { Server, Socket } from 'socket.io';
 import { RoomService } from './room.service';
 import { polyglot } from '@/common/lang/polyglot';
+import { GatewayDefaultConnections } from '@/common/app/gateway.default.connections';
 
 // Используется process, потому что AppEnvironment не может быть здесь использован.
 // В остальных случаях, внутри классов, лучше использовать обертку AppEnvironment,
 // Через внедрение AppEnvironment в constructor
-@WebSocketGateway(Number(process.env.WS_PORT), { transports: ['websocket'] })
-export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
+@WebSocketGateway(Number(process.env.WS_PORT), {
+    transports: ['websocket'],
+    namespace: '/rooms',
+})
+export class RoomGateway extends GatewayDefaultConnections {
     @WebSocketServer()
     private server: Server;
 
-    constructor(private readonly roomService: RoomService) {}
-
-    handleConnection(client: Socket) {
-        const response = this.roomService.handleConnection();
-        client.emit('connectionSuccess', response);
+    constructor(private readonly roomService: RoomService) {
+        super();
     }
 
     handleDisconnect(client: Socket) {
