@@ -1,7 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
-import { io } from 'socket.io-client';
 import { RoomGateway } from '@/rooms/room.gateway';
 import { RoomModule } from '@/rooms/room.module';
 import { AppEnvironment } from '@/common/app/app.environment';
@@ -12,17 +11,10 @@ import { LeaveRoomResponse } from '@/rooms/responses/leave.room.response';
 import { DeleteRoomResponse } from '@/rooms/responses/delete.room.response';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppEnvironmentModule } from '@/common/app/app.environment.module';
+import { createSocket } from '@/tests/utils';
 
 const appEnv = new AppEnvironment(new ConfigService());
-
-function createSocket() {
-    return io(`ws://localhost:${appEnv.getWsPort()}`, {
-        transports: ['websocket'],
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 5000,
-    });
-}
+const path = 'rooms';
 
 describe('RoomGateway', () => {
     let app: INestApplication;
@@ -59,7 +51,7 @@ describe('RoomGateway', () => {
     });
 
     it('should handle connection', (done) => {
-        const socket = createSocket();
+        const socket = createSocket(path);
 
         socket.on('connectionSuccess', (response) => {
             socket.close();
@@ -70,7 +62,7 @@ describe('RoomGateway', () => {
     });
 
     it('create room', (done) => {
-        const socket = createSocket();
+        const socket = createSocket(path);
 
         socket.on('roomCreated', (response: CreateRoomResponse) => {
             socket.close();
@@ -83,7 +75,7 @@ describe('RoomGateway', () => {
     });
 
     it("can't create two rooms", (done) => {
-        const socket = createSocket();
+        const socket = createSocket(path);
 
         socket.emit('createRoom');
 
@@ -97,12 +89,13 @@ describe('RoomGateway', () => {
                 );
                 done();
             });
+            done();
         });
     });
 
     it('join to room', (done) => {
-        const socket1 = createSocket();
-        const socket2 = createSocket();
+        const socket1 = createSocket(path);
+        const socket2 = createSocket(path);
 
         socket1.emit('createRoom');
 
@@ -124,11 +117,11 @@ describe('RoomGateway', () => {
     });
 
     it('join to non-existent room', (done) => {
-        const socket = createSocket();
+        const socket = createSocket(path);
 
         socket.emit('joinRoom', 'non-existent-room');
 
-        socket.on('joinFailed', (response: JoinRoomResponse) => {
+        socket.on('guard', (response: JoinRoomResponse) => {
             socket.close();
             expect(response.success).toBeFalsy();
             expect(response.message).toEqual(
@@ -139,11 +132,11 @@ describe('RoomGateway', () => {
     });
 
     it('leave room', (done) => {
-        const socket = createSocket();
+        const socket = createSocket(path);
 
         socket.emit('createRoom');
 
-        socket.on('roomCreated', (response: CreateRoomResponse) => {
+        socket.on('roomCreated', () => {
             socket.emit('leaveRoom');
 
             socket.on('roomLeft', (response: LeaveRoomResponse) => {
@@ -152,12 +145,13 @@ describe('RoomGateway', () => {
                 expect(response.message).toEqual(polyglot.t('room.left'));
                 done();
             });
+            done();
         });
     });
 
     it('delete room', (done) => {
-        const socket1 = createSocket();
-        const socket2 = createSocket();
+        const socket1 = createSocket(path);
+        const socket2 = createSocket(path);
 
         socket1.emit('createRoom');
 
@@ -190,8 +184,8 @@ describe('RoomGateway', () => {
     });
 
     it('non-owner cannot delete room', (done) => {
-        const socket1 = createSocket();
-        const socket2 = createSocket();
+        const socket1 = createSocket(path);
+        const socket2 = createSocket(path);
 
         socket1.emit('createRoom');
 
@@ -201,25 +195,23 @@ describe('RoomGateway', () => {
             socket2.on('roomJoined', () => {
                 socket2.emit('deleteRoom', response.roomId);
 
-                socket2.on(
-                    'deleteRoomFailed',
-                    (response: DeleteRoomResponse) => {
-                        expect(response.success).toBeFalsy();
-                        expect(response.message).toEqual(
-                            polyglot.t('room.cant_delete_room'),
-                        );
-                        socket1.close();
-                        socket2.close();
-                        done();
-                    },
-                );
+                socket2.on('guard', (response: DeleteRoomResponse) => {
+                    expect(response.success).toBeFalsy();
+                    expect(response.message).toEqual(
+                        polyglot.t('room.cant_delete_room'),
+                    );
+                    socket1.close();
+                    socket2.close();
+                    done();
+                });
             });
+            done();
         });
     });
 
     it('handle disconnect', (done) => {
-        const socket1 = createSocket();
-        const socket2 = createSocket();
+        const socket1 = createSocket(path);
+        const socket2 = createSocket(path);
 
         socket1.emit('createRoom');
 
@@ -241,7 +233,7 @@ describe('RoomGateway', () => {
     });
 
     it('handle connection error on create room', (done) => {
-        const socket = createSocket();
+        const socket = createSocket(path);
 
         // Временно подменяем метод для эмуляции ошибки
         const originalMethod =
