@@ -1,6 +1,8 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
+  // prisma-comment: Должно быть так - output   = "../generated/prisma/client"
+  // Но так не работает
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {

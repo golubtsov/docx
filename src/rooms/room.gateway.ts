@@ -7,6 +7,12 @@ import { Server, Socket } from 'socket.io';
 import { RoomService } from './room.service';
 import { polyglot } from '@/common/lang/polyglot';
 import { GatewayDefaultConnections } from '@/common/app/gateway.default.connections';
+import { UseGuards } from '@nestjs/common';
+import { RoomExistsGuard } from '@/rooms/guards/room.exists.guard';
+import { ClientAlreadyInRoomGuard } from '@/rooms/guards/client.already.in.room.guard';
+import { UserConnectedAlreadyGuard } from '@/rooms/guards/user.connected.already.guard';
+import { CantDeleteRoomGuard } from '@/rooms/guards/cant.delete.room.guard';
+import { UserNotHaveRoomsGuard } from '@/rooms/guards/user.not.have.rooms.guard';
 
 // Используется process, потому что AppEnvironment не может быть здесь использован.
 // В остальных случаях, внутри классов, лучше использовать обертку AppEnvironment,
@@ -32,6 +38,7 @@ export class RoomGateway extends GatewayDefaultConnections {
         }
     }
 
+    @UseGuards(ClientAlreadyInRoomGuard)
     @SubscribeMessage('createRoom')
     async handleCreateRoom(client: Socket) {
         try {
@@ -46,6 +53,7 @@ export class RoomGateway extends GatewayDefaultConnections {
         }
     }
 
+    @UseGuards(RoomExistsGuard, UserConnectedAlreadyGuard)
     @SubscribeMessage('joinRoom')
     handleJoinRoom(client: Socket, roomId: string) {
         try {
@@ -78,6 +86,7 @@ export class RoomGateway extends GatewayDefaultConnections {
         }
     }
 
+    @UseGuards(RoomExistsGuard, UserNotHaveRoomsGuard)
     @SubscribeMessage('leaveRoom')
     handleLeaveRoom(client: Socket) {
         const response = this.roomService.leaveRoom(client.id);
@@ -89,6 +98,7 @@ export class RoomGateway extends GatewayDefaultConnections {
         }
     }
 
+    @UseGuards(RoomExistsGuard, CantDeleteRoomGuard)
     @SubscribeMessage('deleteRoom')
     handleDeleteRoom(client: Socket, roomId: string) {
         const response = this.roomService.deleteRoom(roomId, client.id);

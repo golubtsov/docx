@@ -14,8 +14,8 @@ export class VersionService {
      * При удалении комнаты (выходе владельца? или др. действие?) сохраняется новая версия документа,
      * сохраняется снапшот между версиями в sql-бд
      */
-    saveVersion(roomId: string) {
-        this.versionRepository.createVersion(
+    async saveVersion(roomId: string) {
+        return await this.versionRepository.createVersion(
             this.roomRepository.getRoom(roomId),
         );
     }

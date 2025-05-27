@@ -8,7 +8,11 @@ docker compose up -d
 В контейнере
 
 ```
-npm i
+npm i --legacy-peer-deps
+
+npx prisma db push
+
+npx prisma generate
 ```
 
 ## Общее

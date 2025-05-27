@@ -1,16 +1,54 @@
+import * as Y from 'yjs';
+import { Snapshot } from 'yjs';
 import { Injectable } from '@nestjs/common';
 import { RoomDTO } from '@/rooms/dto/room.dto';
-import { PrismaClient } from '@prisma/client';
+import { PrismaService } from '@/common/app/prisma.service';
+import { CreateVersionResponseDto } from '@/versions/dto/create.version.response.dto';
 
 @Injectable()
 export class VersionRepository {
+    constructor(private prisma: PrismaService) {}
+
     async createVersion(room: RoomDTO) {
-        const provider = room.provider;
-        const prisma = new PrismaClient();
+        const lastVersion = await this.prisma.version.findFirst({
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
 
-        const lastVersion = await prisma.version.last();
+        const ydoc = room.ydoc;
+        const snapshot = Y.snapshot(ydoc);
 
-        console.log(lastVersion);
+        if (!lastVersion) {
+            return await this.getResponseCreated(snapshot);
+        } else {
+            if (
+                !Y.equalSnapshots(
+                    Y.decodeSnapshot(lastVersion.snapshot),
+                    snapshot,
+                )
+            ) {
+                return await this.getResponseCreated(snapshot);
+            } else {
+                return {
+                    id: lastVersion.id,
+                    file_id: lastVersion.file_id,
+                };
+            }
+        }
+    }
+
+    private async getResponseCreated(
+        snapshot: Snapshot,
+    ): Promise<CreateVersionResponseDto> {
+        const created = await this.prisma.version.create({
+            data: {
+                file_id: 111,
+                snapshot: Y.encodeSnapshot(snapshot),
+            },
+        });
+
+        return { id: created.id, file_id: created.file_id };
     }
 
     createInterimVersion(room: RoomDTO) {}
