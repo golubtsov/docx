@@ -1,6 +1,12 @@
 import { io } from 'socket.io-client';
 import { AppEnvironment } from '@/common/app/app.environment';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { INestApplication } from '@nestjs/common';
+import { RoomGateway } from '@/rooms/room.gateway';
+import { Test } from '@nestjs/testing';
+import { AppEnvironmentModule } from '@/common/app/app.environment.module';
+import { RoomModule } from '@/rooms/room.module';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 /**
  * @example

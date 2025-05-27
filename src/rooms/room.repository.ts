@@ -109,7 +109,7 @@ export class RoomRepository {
     }
 
     private handleCreationError(error: any): CreateRoomResponse {
-        console.error('Room creation failed:', error.message);
+        console.error('Room creation failed:', error.error);
         return { message: polyglot.t('room.error.create') };
     }
 

@@ -1,45 +1,29 @@
-import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import { IoAdapter } from '@nestjs/platform-socket.io';
 import { RoomGateway } from '@/rooms/room.gateway';
-import { RoomModule } from '@/rooms/room.module';
-import { AppEnvironment } from '@/common/app/app.environment';
 import { CreateRoomResponse } from '@/rooms/responses/create.room.response';
 import { polyglot } from '@/common/lang/polyglot';
 import { JoinRoomResponse } from '@/rooms/responses/join.room.response';
 import { LeaveRoomResponse } from '@/rooms/responses/leave.room.response';
 import { DeleteRoomResponse } from '@/rooms/responses/delete.room.response';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AppEnvironmentModule } from '@/common/app/app.environment.module';
 import { createSocket } from '@/tests/utils';
+import { AppTest } from '@/tests/app.test';
 
-const appEnv = new AppEnvironment(new ConfigService());
 const path = 'rooms';
 
 describe('RoomGateway', () => {
     let app: INestApplication;
     let gateway: RoomGateway;
+    let appTestInstance: AppTest;
 
     beforeAll(async () => {
-        const moduleRef = await Test.createTestingModule({
-            imports: [
-                await ConfigModule.forRoot({ isGlobal: true }),
-                AppEnvironmentModule,
-                RoomModule,
-            ],
-        }).compile();
-
-        app = moduleRef.createNestApplication();
-        app.useWebSocketAdapter(new IoAdapter(app));
-        await app.init();
-        await app.listen(appEnv.getAppPort());
-
-        gateway = moduleRef.get<RoomGateway>(RoomGateway);
+        appTestInstance = await AppTest.getInstance();
+        app = appTestInstance.getApp();
+        gateway = appTestInstance.getRoomGateway();
     });
 
     afterEach(() => {
         // Очищаем все соединения после каждого теста
-        gateway['server'].disconnectSockets(true);
+        appTestInstance.clearAllConnections();
     });
 
     afterAll(async () => {

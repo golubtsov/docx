@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppStateEnum } from '@/common/app/app.state.enum';
 
-export function wsPortHelper() {
+export function wsPortHelper(): number {
     const environment = new AppEnvironment(new ConfigService());
-    return environment.getWsPort();
+    return Number(environment.getWsPort());
 }
 
 @Injectable()
