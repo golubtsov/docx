@@ -2,6 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppStateEnum } from '@/common/app/app.state.enum';
 
+export function wsPortHelper() {
+    const environment = new AppEnvironment(new ConfigService());
+    return environment.getWsPort();
+}
+
 @Injectable()
 export class AppEnvironment {
     constructor(private readonly configService: ConfigService) {}

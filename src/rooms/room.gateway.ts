@@ -13,11 +13,10 @@ import { ClientAlreadyInRoomGuard } from '@/rooms/guards/client.already.in.room.
 import { UserConnectedAlreadyGuard } from '@/rooms/guards/user.connected.already.guard';
 import { CantDeleteRoomGuard } from '@/rooms/guards/cant.delete.room.guard';
 import { UserNotHaveRoomsGuard } from '@/rooms/guards/user.not.have.rooms.guard';
+import { AppEnvironment, wsPortHelper } from '@/common/app/app.environment';
+import { AppStateEnum } from '@/common/app/app.state.enum';
 
-// Используется process, потому что AppEnvironment не может быть здесь использован.
-// В остальных случаях, внутри классов, лучше использовать обертку AppEnvironment,
-// Через внедрение AppEnvironment в constructor
-@WebSocketGateway(Number(process.env.WS_PORT), {
+@WebSocketGateway(wsPortHelper(), {
     transports: ['websocket'],
     namespace: '/rooms',
 })
@@ -25,16 +24,21 @@ export class RoomGateway extends GatewayDefaultConnections {
     @WebSocketServer()
     private server: Server;
 
-    constructor(private readonly roomService: RoomService) {
+    constructor(
+        private readonly roomService: RoomService,
+        private appEnv: AppEnvironment,
+    ) {
         super();
     }
 
     handleDisconnect(client: Socket) {
-        const leaveResult = this.roomService.leaveRoom(client.id);
-        if (leaveResult.success) {
-            this.server
-                .to(leaveResult.roomId)
-                .emit('userLeft', { clientId: client.id });
+        if (this.appEnv.getNodeEnv() !== AppStateEnum.Jest) {
+            const leaveResult = this.roomService.leaveRoom(client.id);
+            if (leaveResult.success) {
+                this.server
+                    .to(leaveResult.roomId)
+                    .emit('userLeft', { clientId: client.id });
+            }
         }
     }
 
@@ -48,7 +52,9 @@ export class RoomGateway extends GatewayDefaultConnections {
             client.join(createRoomResponse.roomId);
             client.emit('roomCreated', createRoomResponse);
         } catch (error: any) {
-            console.log(error);
+            if (this.appEnv.getNodeEnv() !== AppStateEnum.Jest) {
+                console.log(error);
+            }
             client.emit('error', { message: polyglot.t('room.error.create') });
         }
     }

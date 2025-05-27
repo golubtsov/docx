@@ -3,7 +3,7 @@ import { Snapshot } from 'yjs';
 import { Injectable } from '@nestjs/common';
 import { RoomDTO } from '@/rooms/dto/room.dto';
 import { PrismaService } from '@/common/app/prisma.service';
-import { CreateVersionResponseDto } from '@/versions/dto/create.version.response.dto';
+import { CreateVersionResponseDto } from '@/versions/responses/create.version.response.dto';
 
 @Injectable()
 export class VersionRepository {

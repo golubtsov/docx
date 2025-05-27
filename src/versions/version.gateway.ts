@@ -4,8 +4,9 @@ import { VersionService } from '@/versions/version.service';
 import { GatewayDefaultConnections } from '@/common/app/gateway.default.connections';
 import { UseGuards } from '@nestjs/common';
 import { RoomExistsGuard } from '@/rooms/guards/room.exists.guard';
+import { wsPortHelper } from '@/common/app/app.environment';
 
-@WebSocketGateway(Number(process.env.WS_PORT), {
+@WebSocketGateway(wsPortHelper(), {
     transports: ['websocket'],
     namespace: '/versions',
 })
