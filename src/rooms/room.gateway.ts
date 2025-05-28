@@ -1,9 +1,5 @@
-import {
-    SubscribeMessage,
-    WebSocketGateway,
-    WebSocketServer,
-} from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
+import { Socket } from 'socket.io';
 import { RoomService } from './room.service';
 import { polyglot } from '@/common/lang/polyglot';
 import { GatewayDefaultConnections } from '@/common/app/gateway.default.connections';
@@ -21,9 +17,6 @@ import { AppStateEnum } from '@/common/app/app.state.enum';
     namespace: '/rooms',
 })
 export class RoomGateway extends GatewayDefaultConnections {
-    @WebSocketServer()
-    private server: Server;
-
     constructor(
         private readonly roomService: RoomService,
         private appEnv: AppEnvironment,

@@ -22,7 +22,6 @@ describe('RoomGateway', () => {
     });
 
     afterEach(() => {
-        // Очищаем все соединения после каждого теста
         appTestInstance.clearAllConnections();
     });
 

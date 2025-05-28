@@ -1,6 +1,4 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-// prisma-comment: Должно быть так, но так не работает
-// import { PrismaClient } from '../../../generated/prisma/client';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()

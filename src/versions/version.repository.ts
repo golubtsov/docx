@@ -3,7 +3,7 @@ import { Snapshot } from 'yjs';
 import { Injectable } from '@nestjs/common';
 import { RoomDTO } from '@/rooms/dto/room.dto';
 import { PrismaService } from '@/common/app/prisma.service';
-import { CreateVersionResponseDto } from '@/versions/responses/create.version.response.dto';
+import { CreateVersionResponse } from '@/versions/responses/create.version.response';
 
 @Injectable()
 export class VersionRepository {
@@ -40,7 +40,7 @@ export class VersionRepository {
 
     private async getResponseCreated(
         snapshot: Snapshot,
-    ): Promise<CreateVersionResponseDto> {
+    ): Promise<CreateVersionResponse> {
         const created = await this.prisma.version.create({
             data: {
                 file_id: 111,

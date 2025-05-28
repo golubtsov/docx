@@ -7,6 +7,7 @@ import { RoomModule } from '@/rooms/room.module';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { RoomGateway } from '@/rooms/room.gateway';
 import { VersionGateway } from '@/versions/version.gateway';
+import { VersionModule } from '@/versions/version.module';
 
 const appEnv = new AppEnvironment(new ConfigService());
 
@@ -36,6 +37,7 @@ export class AppTest {
                 await ConfigModule.forRoot({ isGlobal: true }),
                 AppEnvironmentModule,
                 RoomModule,
+                VersionModule,
             ],
         }).compile();
 
@@ -49,6 +51,7 @@ export class AppTest {
         return this.app;
     }
 
+    //TODO Эти три метода не очень мне нравятся
     getRoomGateway() {
         return this.moduleRef.get<RoomGateway>(RoomGateway);
     }
@@ -59,5 +62,6 @@ export class AppTest {
 
     clearAllConnections() {
         this.getRoomGateway()['server'].disconnectSockets(true);
+        this.getVersionGateway()['server'].disconnectSockets(true);
     }
 }
