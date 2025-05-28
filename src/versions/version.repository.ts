@@ -9,46 +9,16 @@ import { CreateVersionResponse } from '@/versions/responses/create.version.respo
 export class VersionRepository {
     constructor(private prisma: PrismaService) {}
 
-    async createVersion(room: RoomDTO) {
-        const lastVersion = await this.prisma.version.findFirst({
-            orderBy: {
-                createdAt: 'desc',
-            },
+    async getLastVersion() {
+        return this.prisma.version.findFirst({
+            orderBy: { createdAt: 'desc' },
         });
-
-        const ydoc = room.ydoc;
-        const snapshot = Y.snapshot(ydoc);
-
-        if (!lastVersion) {
-            return await this.getResponseCreated(snapshot);
-        } else {
-            if (
-                !Y.equalSnapshots(
-                    Y.decodeSnapshot(lastVersion.snapshot),
-                    snapshot,
-                )
-            ) {
-                return await this.getResponseCreated(snapshot);
-            } else {
-                return {
-                    id: lastVersion.id,
-                    file_id: lastVersion.file_id,
-                };
-            }
-        }
     }
 
-    private async getResponseCreated(
-        snapshot: Snapshot,
-    ): Promise<CreateVersionResponse> {
-        const created = await this.prisma.version.create({
-            data: {
-                file_id: 111,
-                snapshot: Y.encodeSnapshot(snapshot),
-            },
+    async createVersion(snapshot: Snapshot, fileId: number) {
+        return this.prisma.version.create({
+            data: { file_id: fileId, snapshot: Y.encodeSnapshot(snapshot) },
         });
-
-        return { id: created.id, file_id: created.file_id };
     }
 
     createInterimVersion(room: RoomDTO) {}

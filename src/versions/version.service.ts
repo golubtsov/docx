@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { RoomRepository } from '@/rooms/room.repository';
 import { VersionRepository } from '@/versions/version.repository';
+import * as Y from 'yjs';
 
 @Injectable()
 export class VersionService {
@@ -15,9 +16,21 @@ export class VersionService {
      * сохраняется снапшот между версиями в sql-бд
      */
     async saveVersion(roomId: string) {
-        return await this.versionRepository.createVersion(
-            this.roomRepository.getRoom(roomId),
-        );
+        const room = this.roomRepository.getRoom(roomId);
+        const snapshot = Y.snapshot(room.ydoc);
+        const lastVersion = await this.versionRepository.getLastVersion();
+
+        if (
+            !lastVersion ||
+            !Y.equalSnapshots(Y.decodeSnapshot(lastVersion.snapshot), snapshot)
+        ) {
+            const version = await this.versionRepository.createVersion(
+                snapshot,
+                111,
+            );
+            return { id: version.id, file_id: version.file_id };
+        }
+        return lastVersion;
     }
 
     /**
