@@ -1,13 +1,19 @@
 import * as Y from 'yjs';
 import { Snapshot } from 'yjs';
 import { Injectable } from '@nestjs/common';
-import { RoomDTO } from '@/rooms/dto/room.dto';
 import { PrismaService } from '@/common/app/prisma.service';
-import { CreateVersionResponse } from '@/versions/responses/create.version.response';
+import { RedisService } from '@/common/app/redis.service';
+import {
+    InterimVersionRedisDto,
+    InterimVersionsRedisDto,
+} from '@/versions/dto/last.version.redis.dto';
 
 @Injectable()
 export class VersionRepository {
-    constructor(private prisma: PrismaService) {}
+    constructor(
+        private prisma: PrismaService,
+        private redisService: RedisService,
+    ) {}
 
     async getLastVersion() {
         return this.prisma.version.findFirst({
@@ -21,5 +27,22 @@ export class VersionRepository {
         });
     }
 
-    createInterimVersion(room: RoomDTO) {}
+    async getLastInterimVersion(
+        roomId: string,
+    ): Promise<InterimVersionRedisDto> {
+        const data =
+            await this.redisService.get<InterimVersionsRedisDto>(roomId);
+        return data ? data.versions[data.versions.length - 1] : null;
+    }
+
+    async getInterimVersions(roomId: string) {
+        return this.redisService.get<InterimVersionsRedisDto>(roomId);
+    }
+
+    async createInterimVersion(
+        roomId: string,
+        value: string | number | Buffer,
+    ) {
+        return this.redisService.set(roomId, value);
+    }
 }

@@ -22,8 +22,11 @@ export class VersionGateway extends GatewayDefaultConnections {
         client.emit('savedVersion', response);
     }
 
+    @UseGuards(RoomExistsGuard)
     @SubscribeMessage('saveInterimVersion')
-    handlerSaveInterimVersion(client: Socket, roomId: string) {
-        this.versionService.saveInterimVersion(roomId);
+    async handlerSaveInterimVersion(client: Socket, roomId: string) {
+        const { message, version } =
+            await this.versionService.saveInterimVersion(roomId);
+        client.emit('savedInterimVersion', { message, version });
     }
 }
