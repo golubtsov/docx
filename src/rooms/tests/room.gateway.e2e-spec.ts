@@ -220,8 +220,8 @@ describe('RoomGateway', () => {
 
         // Временно подменяем метод для эмуляции ошибки
         const originalMethod =
-            gateway['roomService']['roomManager']['createRoom'];
-        gateway['roomService']['roomManager']['createRoom'] = async () => {
+            gateway['roomService']['roomRepository']['createRoom'];
+        gateway['roomService']['roomRepository']['createRoom'] = async () => {
             throw new Error('Test error');
         };
 
@@ -231,7 +231,7 @@ describe('RoomGateway', () => {
             expect(response.message).toEqual(polyglot.t('room.error.create'));
 
             // Восстанавливаем оригинальный метод
-            gateway['roomService']['roomManager']['createRoom'] =
+            gateway['roomService']['roomRepository']['createRoom'] =
                 originalMethod;
             socket.close();
             done();

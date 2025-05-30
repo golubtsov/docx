@@ -15,6 +15,20 @@ export class VersionRepository {
         private redisService: RedisService,
     ) {}
 
+    findAll() {
+        return this.prisma.version.findMany();
+    }
+
+    findOne(id: number) {
+        return this.prisma.version.findUnique({
+            where: { id: Number(id) },
+        });
+    }
+
+    removeOne(id: number) {
+        return this.prisma.version.delete({ where: { id: Number(id) } });
+    }
+
     async getLastVersion() {
         return this.prisma.version.findFirst({
             orderBy: { createdAt: 'desc' },

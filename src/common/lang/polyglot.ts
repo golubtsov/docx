@@ -18,6 +18,9 @@ export const polyglot = new Polyglot({
             cant_delete_room: 'Вы не можете удалить комнату',
             deleted: 'Комната удалена',
         },
+        exception: {
+            not_found: 'Запись не найдена',
+        },
     },
     locale: 'ru',
 });

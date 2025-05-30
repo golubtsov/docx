@@ -13,9 +13,20 @@ export class VersionService {
         private readonly versionRepository: VersionRepository,
     ) {}
 
+    findAll() {
+        return this.versionRepository.findAll();
+    }
+
+    findOne(id: number) {
+        return this.versionRepository.findOne(id);
+    }
+
+    removeOne(id: number) {
+        return this.versionRepository.removeOne(id);
+    }
+
     /**
-     * Сохранить новую версию документа
-     * При удалении комнаты (выходе владельца? или др. действие?) сохраняется новая версия документа,
+     * Сохранить новую версию документа,
      * сохраняется снапшот между версиями в sql-бд
      */
     async saveVersion(roomId: string) {

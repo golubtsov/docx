@@ -143,23 +143,18 @@ export class RoomRepository {
         return { success: true, roomId, message: polyglot.t('room.left') };
     }
 
-    deleteRoom(roomId: string, clientId: string): DeleteRoomResponse {
-        const room = this.getRoom(roomId);
+    deleteRoom(roomId: string) {
+        return this.rooms.delete(roomId);
+    }
 
-        room.provider.destroy();
-        this.rooms.delete(roomId);
-        room.clients.forEach((clientId) => this.clientRooms.delete(clientId));
-
-        return {
-            success: true,
-            message: polyglot.t('room.deleted'),
-        };
+    deleteClientRooms(clientId: string) {
+        return this.clientRooms.delete(clientId);
     }
 
     private cleanupEmptyRooms() {
         for (const [roomId, room] of this.rooms) {
             if (room.clients.size === 0) {
-                this.deleteRoom(roomId, room.owner_id);
+                this.deleteRoom(roomId);
             }
         }
     }

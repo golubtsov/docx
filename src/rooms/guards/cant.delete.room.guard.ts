@@ -15,6 +15,8 @@ export class CantDeleteRoomGuard implements CanActivate {
         const roomId = context.switchToWs().getData();
         const room = this.roomRepository.getRoom(roomId);
 
+        console.log(room.owner_id !== client.id);
+
         if (room.owner_id !== client.id) {
             client.emit('guard', {
                 success: false,

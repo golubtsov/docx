@@ -5,6 +5,7 @@ import { DocumentService } from '@docxservice/documentservice';
 import { YsyncAdapterService } from '@/common/yjs/ysync.adapter.service';
 import { RoomRepository } from '@/rooms/room.repository';
 import { AppEnvironment } from '@/common/app/app.environment';
+import { RedisService } from '@/common/app/redis.service';
 
 @Module({
     providers: [
@@ -14,6 +15,7 @@ import { AppEnvironment } from '@/common/app/app.environment';
         DocumentService,
         YsyncAdapterService,
         RoomRepository,
+        RedisService,
     ],
     exports: [RoomService, RoomRepository],
 })
