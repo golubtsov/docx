@@ -1,29 +1,68 @@
 import { polyglot } from '@/common/lang/polyglot';
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { RoomRepository } from '@/rooms/room.repository';
 import { CreateRoomResponse } from '@/rooms/responses/create.room.response';
 import { JoinRoomResponse } from '@/rooms/responses/join.room.response';
 import { DeleteRoomResponse } from '@/rooms/responses/delete.room.response';
 import { LeaveRoomResponse } from '@/rooms/responses/leave.room.response';
 import { RedisService } from '@/common/app/redis.service';
+import { AppStateEnum } from '@/common/app/app.state.enum';
+import { AppEnvironment } from '@/common/app/app.environment';
+import { YDocInitializerService } from '@/common/yjs/ydoc.initializer.service';
 
 @Injectable()
 export class RoomService {
     constructor(
         private readonly roomRepository: RoomRepository,
         private readonly redisService: RedisService,
+        private readonly appEnv: AppEnvironment,
+        private readonly yDocInitializer: YDocInitializerService,
     ) {}
 
     async createRoom(clientId: string): Promise<CreateRoomResponse> {
-        return this.roomRepository.createRoom(clientId);
+        if (this.roomRepository.isClientInRoom(clientId)) {
+            throw new ConflictException(
+                polyglot.t('room.error.already_in_room'),
+            );
+        }
+
+        const roomId = this.generateRoomId();
+        const { ydoc, provider } =
+            await this.yDocInitializer.createYDocWithProvider(roomId);
+
+        this.roomRepository.saveRoom(roomId, clientId, provider, ydoc);
+
+        return {
+            roomId,
+            host: this.roomRepository.getYHost(),
+        };
+    }
+
+    private generateRoomId(): string {
+        if (this.appEnv.getNodeEnv() === AppStateEnum.Development) {
+            return '1111'; // для тестирования
+        }
+        return Math.random().toString(36).substring(2, 8);
     }
 
     joinRoom(clientId: string, roomId: string): JoinRoomResponse {
-        return this.roomRepository.joinRoom(clientId, roomId);
+        const room = this.roomRepository.getRoom(roomId);
+
+        room.clients.add(clientId);
+
+        this.roomRepository.joinRoom(clientId, roomId);
+
+        return {
+            success: true,
+            message: polyglot.t('room.connected'),
+            room: room,
+        };
     }
 
     leaveRoom(clientId: string): LeaveRoomResponse {
-        return this.roomRepository.leaveRoom(clientId);
+        const roomId = this.roomRepository.leaveRoom(clientId);
+
+        return { success: true, roomId, message: polyglot.t('room.left') };
     }
 
     deleteRoom(roomId: string, clientId: string): DeleteRoomResponse {
