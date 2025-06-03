@@ -7,6 +7,7 @@ import { RoomRepository } from '@/rooms/room.repository';
 import { AppEnvironment } from '@/common/app/app.environment';
 import { RedisService } from '@/common/app/redis.service';
 import { YDocInitializerService } from '@/common/yjs/ydoc.initializer.service';
+import { PrismaService } from '@/common/app/prisma.service';
 
 @Module({
     providers: [
@@ -18,6 +19,7 @@ import { YDocInitializerService } from '@/common/yjs/ydoc.initializer.service';
         YDocInitializerService,
         RoomRepository,
         RedisService,
+        PrismaService,
     ],
     exports: [RoomService, RoomRepository],
 })

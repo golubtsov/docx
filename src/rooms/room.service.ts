@@ -1,5 +1,5 @@
 import { polyglot } from '@/common/lang/polyglot';
-import { ConflictException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { RoomRepository } from '@/rooms/room.repository';
 import { CreateRoomResponse } from '@/rooms/responses/create.room.response';
 import { JoinRoomResponse } from '@/rooms/responses/join.room.response';
@@ -19,22 +19,20 @@ export class RoomService {
         private readonly yDocInitializer: YDocInitializerService,
     ) {}
 
-    async createRoom(clientId: string): Promise<CreateRoomResponse> {
-        if (this.roomRepository.isClientInRoom(clientId)) {
-            throw new ConflictException(
-                polyglot.t('room.error.already_in_room'),
-            );
-        }
-
+    async createRoom(
+        clientId: string,
+        fileId: number,
+    ): Promise<CreateRoomResponse> {
         const roomId = this.generateRoomId();
         const { ydoc, provider } =
-            await this.yDocInitializer.createYDocWithProvider(roomId);
+            await this.yDocInitializer.createYDocWithProvider(roomId, fileId);
 
-        this.roomRepository.saveRoom(roomId, clientId, provider, ydoc);
+        this.roomRepository.saveRoom(roomId, clientId, provider, ydoc, fileId);
 
         return {
             roomId,
             host: this.roomRepository.getYHost(),
+            fileId,
         };
     }
 

@@ -1,20 +1,11 @@
 import * as Y from 'yjs';
-import { Doc } from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import { RoomDTO } from '@/rooms/dto/room.dto';
-import { CreateRoomResponse } from '@/rooms/responses/create.room.response';
-import { JoinRoomResponse } from '@/rooms/responses/join.room.response';
 import { Injectable } from '@nestjs/common';
-import { DeleteRoomResponse } from '@/rooms/responses/delete.room.response';
-import { LeaveRoomResponse } from '@/rooms/responses/leave.room.response';
-import { AppStateEnum } from '@/common/app/app.state.enum';
 import { AppEnvironment } from '@/common/app/app.environment';
-import { polyglot } from '@/common/lang/polyglot';
 
 @Injectable()
 export class RoomRepository {
-    private readonly Y_HOST: string = `ws://localhost:${this.appEnv.getYJSPort()}`;
-
     private rooms = new Map<string, RoomDTO>();
 
     private clientRooms = new Map<string, string>();
@@ -28,6 +19,7 @@ export class RoomRepository {
         clientId: string,
         provider: WebsocketProvider,
         ydoc: Y.Doc,
+        fileId: number,
     ): void {
         const room: RoomDTO = {
             id: roomId,
@@ -35,6 +27,7 @@ export class RoomRepository {
             provider,
             clients: new Set([clientId]),
             ydoc,
+            file_id: fileId,
         };
         this.rooms.set(roomId, room);
         this.clientRooms.set(clientId, roomId);
@@ -63,7 +56,7 @@ export class RoomRepository {
     leaveRoom(clientId: string) {
         const roomId = this.clientRooms.get(clientId);
 
-        this.getRoom(roomId).clients.delete(clientId);
+        this.getRoom(roomId)?.clients.delete(clientId);
 
         this.clientRooms.delete(clientId);
 

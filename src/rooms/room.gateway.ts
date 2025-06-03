@@ -11,6 +11,7 @@ import { CantDeleteRoomGuard } from '@/rooms/guards/cant.delete.room.guard';
 import { UserNotHaveRoomsGuard } from '@/rooms/guards/user.not.have.rooms.guard';
 import { AppEnvironment, wsPortHelper } from '@/common/app/app.environment';
 import { AppStateEnum } from '@/common/app/app.state.enum';
+import { CheckFileIdGuard } from '@/rooms/guards/check.file.id.guard';
 
 @WebSocketGateway(wsPortHelper(), {
     transports: ['websocket'],
@@ -35,12 +36,14 @@ export class RoomGateway extends GatewayDefaultConnections {
         }
     }
 
-    @UseGuards(ClientAlreadyInRoomGuard)
+    @UseGuards(ClientAlreadyInRoomGuard, CheckFileIdGuard)
     @SubscribeMessage('createRoom')
-    async handleCreateRoom(client: Socket) {
+    async handleCreateRoom(client: Socket, data: string) {
         try {
+            const fileId = JSON.parse(data).file_id;
             const createRoomResponse = await this.roomService.createRoom(
                 client.id,
+                fileId,
             );
             client.join(createRoomResponse.roomId);
             client.emit('roomCreated', createRoomResponse);

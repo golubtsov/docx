@@ -5,6 +5,7 @@ import { VersionRepository } from '@/versions/version.repository';
 import { Snapshot } from 'yjs';
 import { InterimVersionRedisDto } from '@/versions/dto/last.version.redis.dto';
 import { RoomDTO } from '@/rooms/dto/room.dto';
+import { generateUint8Array } from '@/common/app/app.environment';
 
 @Injectable()
 export class VersionService {
@@ -40,7 +41,7 @@ export class VersionService {
         ) {
             const version = await this.versionRepository.createVersion(
                 snapshot,
-                111,
+                room.file_id,
             );
             return { id: version.id, file_id: version.file_id };
         }
@@ -59,7 +60,7 @@ export class VersionService {
             await this.versionRepository.getLastInterimVersion(room.id);
 
         if (lastInterimVersion) {
-            const uint8Array = this.generateUint8Array(lastInterimVersion);
+            const uint8Array = generateUint8Array(lastInterimVersion.snapshot);
 
             if (
                 !this.isEqualSnapshots(Y.decodeSnapshot(uint8Array), snapshot)
@@ -78,20 +79,6 @@ export class VersionService {
         } else {
             return await this.createFirstInterimVersion(room, snapshot);
         }
-    }
-
-    private generateUint8Array(version: InterimVersionRedisDto) {
-        const length = Object.keys(version.snapshot).reduce(
-            (max, key) => Math.max(max, parseInt(key, 10) + 1),
-            0,
-        );
-
-        const uint8Array = new Uint8Array(length);
-        Object.entries(version.snapshot).forEach(([key, value]) => {
-            uint8Array[parseInt(key, 10)] = value;
-        });
-
-        return uint8Array;
     }
 
     private isEqualSnapshots(fist: Snapshot, second: Snapshot) {
@@ -129,7 +116,7 @@ export class VersionService {
     private async createFirstInterimVersion(room: RoomDTO, snapshot: Snapshot) {
         const version = {
             id: 1,
-            file_id: 111,
+            file_id: room.file_id,
             snapshot: Y.encodeSnapshot(snapshot),
         };
 
