@@ -17,8 +17,9 @@ export class VersionGateway extends GatewayDefaultConnections {
 
     @UseGuards(RoomExistsGuard)
     @SubscribeMessage('saveVersion')
-    async handlerSaveVersion(client: Socket, roomId: string) {
-        const response = await this.versionService.saveVersion(roomId);
+    async handlerSaveVersion(client: Socket, data: any) {
+        data = JSON.parse(data);
+        const response = await this.versionService.saveVersion(data.roomId);
         client.emit('savedVersion', response);
     }
 

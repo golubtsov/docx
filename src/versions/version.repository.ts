@@ -7,6 +7,7 @@ import {
     InterimVersionRedisDto,
     InterimVersionsRedisDto,
 } from '@/versions/dto/last.version.redis.dto';
+import { UpdateVersionDto } from '@/versions/dto/update.version.dto';
 
 @Injectable()
 export class VersionRepository {
@@ -29,15 +30,28 @@ export class VersionRepository {
         return this.prisma.version.delete({ where: { id: Number(id) } });
     }
 
+    update(id: number, updateVersionDto: UpdateVersionDto) {
+        return this.prisma.version.update({
+            where: { id: Number(id) },
+            data: { name: updateVersionDto.name },
+        });
+    }
+
     async getLastVersion() {
         return this.prisma.version.findFirst({
             orderBy: { createdAt: 'desc' },
         });
     }
 
-    async createVersion(snapshot: Snapshot, fileId: number) {
+    async createVersion(snapshot: Snapshot, fileId: number, name?: string) {
         return this.prisma.version.create({
-            data: { file_id: fileId, snapshot: Y.encodeSnapshot(snapshot) },
+            data: {
+                file_id: fileId,
+                snapshot: Y.encodeSnapshot(snapshot),
+                name: name
+                    ? name
+                    : `Новая версия ${new Date().toISOString().replace('T', ' ').substring(0, 19)}`,
+            },
         });
     }
 

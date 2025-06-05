@@ -6,6 +6,7 @@ import { Snapshot } from 'yjs';
 import { InterimVersionRedisDto } from '@/versions/dto/last.version.redis.dto';
 import { RoomDTO } from '@/rooms/dto/room.dto';
 import { generateUint8Array } from '@/common/app/app.environment';
+import { UpdateVersionDto } from '@/versions/dto/update.version.dto';
 
 @Injectable()
 export class VersionService {
@@ -26,11 +27,15 @@ export class VersionService {
         return this.versionRepository.removeOne(id);
     }
 
+    update(id: number, updateVersionDto: UpdateVersionDto) {
+        return this.versionRepository.update(id, updateVersionDto);
+    }
+
     /**
      * Сохранить новую версию документа,
      * сохраняется снапшот между версиями в sql-бд
      */
-    async saveVersion(roomId: string) {
+    async saveVersion(roomId: string, name?: string) {
         const room = this.roomRepository.getRoom(roomId);
         const snapshot = Y.snapshot(room.ydoc);
         const lastVersion = await this.versionRepository.getLastVersion();
@@ -42,8 +47,13 @@ export class VersionService {
             const version = await this.versionRepository.createVersion(
                 snapshot,
                 room.file_id,
+                name,
             );
-            return { id: version.id, file_id: version.file_id };
+            return {
+                id: version.id,
+                file_id: version.file_id,
+                name: version.name,
+            };
         }
         return lastVersion;
     }

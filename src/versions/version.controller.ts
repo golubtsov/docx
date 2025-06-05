@@ -1,6 +1,15 @@
-import { Controller, Delete, Get, Param, UseGuards } from '@nestjs/common';
+import {
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Put,
+    UseGuards,
+    Body,
+} from '@nestjs/common';
 import { VersionService } from '@/versions/version.service';
 import { VersionExistsGuard } from '@/versions/guards/version.exists.guard';
+import { UpdateVersionDto } from '@/versions/dto/update.version.dto';
 
 @Controller('/versions')
 export class VersionController {
@@ -21,5 +30,13 @@ export class VersionController {
     @UseGuards(VersionExistsGuard)
     remove(@Param('id') id: number) {
         return this.versionService.removeOne(id);
+    }
+
+    @Put(':id')
+    update(
+        @Param('id') id: number,
+        @Body() updateVersionDto: UpdateVersionDto,
+    ) {
+        return this.versionService.update(id, updateVersionDto);
     }
 }
