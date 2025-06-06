@@ -7,5 +7,5 @@ export interface RoomDTO {
     provider: WebsocketProvider;
     ydoc: Y.Doc;
     clients: Set<string>; // client IDs
-    file_id: number;
+    file_id: string;
 }

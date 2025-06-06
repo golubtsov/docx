@@ -7,19 +7,23 @@ import { AppEnvironment } from '@/common/app/app.environment';
 import { DocumentService } from '@docxservice/documentservice';
 import { YsyncAdapterService } from '@/common/yjs/ysync.adapter.service';
 import { PrismaService } from '@/common/app/prisma.service';
-import { AppStateEnum } from '@/common/app/app.state.enum';
+import { LogicCenterService } from '@/common/api/logic.center.service';
+import fs from 'node:fs';
 
 @Injectable()
 export class YDocInitializerService {
+    private readonly pathToStorage = path.normalize(`${process.cwd()}/storage`);
+
     constructor(
         private readonly roomRepository: RoomRepository,
         private readonly prismaService: PrismaService,
         private readonly appEnvironment: AppEnvironment,
+        private readonly logicCenterService: LogicCenterService,
     ) {}
 
     async createYDocWithProvider(
         roomId: string,
-        fileId: number,
+        fileId: string,
     ): Promise<{ ydoc: Doc; provider: WebsocketProvider }> {
         const ydoc = new Doc();
         await this.initializeYDocContent(ydoc, fileId);
@@ -37,17 +41,17 @@ export class YDocInitializerService {
 
     private async initializeYDocContent(
         ydoc: Doc,
-        fileId: number,
+        fileId: string,
     ): Promise<void> {
-        if (this.appEnvironment.getNodeEnv() === AppStateEnum.Development) {
-            ydoc.getMap('root').set('key', 'some value');
-        } else {
-            await this.loadWithDocxService(ydoc, fileId);
-        }
+        // if (this.appEnvironment.getNodeEnv() === AppStateEnum.Development) {
+        //     ydoc.getMap('root').set('key', 'some value');
+        // } else {
+        await this.loadWithDocxService(ydoc, fileId);
+        // }
     }
 
     //TODO Должна быть загрузка из snapshot, но пока это не работает
-    private async loadFromSnapshot(fileId: number) {
+    private async loadFromSnapshot(fileId: string) {
         const version = await this.prismaService.version.findFirst({
             where: {
                 file_id: fileId,
@@ -61,16 +65,31 @@ export class YDocInitializerService {
         throw new Error('Stop');
     }
 
-    private async loadWithDocxService(ydoc: Doc, fileId: number) {
+    private async loadWithDocxService(ydoc: Doc, fileId: string) {
+        const fileInfo = await this.logicCenterService.getFileInfo(fileId);
+
+        const buf = await this.logicCenterService.downloadFile(
+            fileInfo.downloadUrl,
+        );
+
+        if (!(buf instanceof Buffer) && buf.status === false) {
+            console.log(buf);
+            throw new Error(fileInfo);
+        }
+
+        const pathToFile = `${this.pathToStorage}/${fileId}.docx`;
+
+        fs.writeFileSync(pathToFile, <Buffer>buf);
+
         const documentService = new DocumentService();
 
-        await documentService.openSystemUri(
-            path.join(process.cwd(), `./data/${fileId}.docx`),
-        );
+        await documentService.openSystemUri(pathToFile);
 
         const adapter = new YsyncAdapterService();
 
         adapter.init(ydoc, documentService.getDocument());
+
+        fs.unlinkSync(pathToFile);
     }
 
     private async waitForProviderConnection(

@@ -8,6 +8,7 @@ import { AppEnvironment } from '@/common/app/app.environment';
 import { RedisService } from '@/common/app/redis.service';
 import { YDocInitializerService } from '@/common/yjs/ydoc.initializer.service';
 import { PrismaService } from '@/common/app/prisma.service';
+import { LogicCenterService } from '@/common/api/logic.center.service';
 
 @Module({
     providers: [
@@ -20,6 +21,7 @@ import { PrismaService } from '@/common/app/prisma.service';
         RoomRepository,
         RedisService,
         PrismaService,
+        LogicCenterService,
     ],
     exports: [RoomService, RoomRepository],
 })

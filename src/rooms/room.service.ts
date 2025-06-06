@@ -21,7 +21,7 @@ export class RoomService {
 
     async createRoom(
         clientId: string,
-        fileId: number,
+        fileId: string,
     ): Promise<CreateRoomResponse> {
         const roomId = this.generateRoomId();
         const { ydoc, provider } =

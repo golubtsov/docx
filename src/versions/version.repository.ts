@@ -43,7 +43,7 @@ export class VersionRepository {
         });
     }
 
-    async createVersion(snapshot: Snapshot, fileId: number, name?: string) {
+    async createVersion(snapshot: Snapshot, fileId: string, name?: string) {
         return this.prisma.version.create({
             data: {
                 file_id: fileId,

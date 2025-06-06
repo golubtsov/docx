@@ -9,7 +9,7 @@ datasource db {
 
 model Version {
   id        Int      @id @default(autoincrement())
-  file_id   Int
+  file_id   String
   name      String
   snapshot  Bytes
   updatedAt DateTime @updatedAt

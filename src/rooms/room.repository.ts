@@ -19,7 +19,7 @@ export class RoomRepository {
         clientId: string,
         provider: WebsocketProvider,
         ydoc: Y.Doc,
-        fileId: number,
+        fileId: string,
     ): void {
         const room: RoomDTO = {
             id: roomId,

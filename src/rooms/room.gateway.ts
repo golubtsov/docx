@@ -40,7 +40,7 @@ export class RoomGateway extends GatewayDefaultConnections {
     @SubscribeMessage('createRoom')
     async handleCreateRoom(client: Socket, data: string) {
         try {
-            const fileId = JSON.parse(data).file_id;
+            const fileId = JSON.parse(data).fileId;
             const createRoomResponse = await this.roomService.createRoom(
                 client.id,
                 fileId,
