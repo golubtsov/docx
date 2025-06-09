@@ -1,14 +1,14 @@
+import fs from 'node:fs';
 import path from 'node:path';
-import { Doc, snapshot } from 'yjs';
+import { applyUpdate, Doc } from 'yjs';
 import { Injectable } from '@nestjs/common';
 import { RoomRepository } from '@/rooms/room.repository';
 import { WebsocketProvider } from 'y-websocket';
-import { AppEnvironment } from '@/common/app/app.environment';
 import { DocumentService } from '@docxservice/documentservice';
 import { YsyncAdapterService } from '@/common/yjs/ysync.adapter.service';
-import { PrismaService } from '@/common/app/prisma.service';
 import { LogicCenterService } from '@/common/api/logic.center.service';
-import fs from 'node:fs';
+import { VersionRepository } from '@/versions/version.repository';
+import { toUint8Array } from 'js-base64';
 
 @Injectable()
 export class YDocInitializerService {
@@ -16,9 +16,8 @@ export class YDocInitializerService {
 
     constructor(
         private readonly roomRepository: RoomRepository,
-        private readonly prismaService: PrismaService,
-        private readonly appEnvironment: AppEnvironment,
         private readonly logicCenterService: LogicCenterService,
+        private readonly versionRepository: VersionRepository,
     ) {}
 
     async createYDocWithProvider(
@@ -26,6 +25,7 @@ export class YDocInitializerService {
         fileId: string,
     ): Promise<{ ydoc: Doc; provider: WebsocketProvider }> {
         const ydoc = new Doc();
+
         await this.initializeYDocContent(ydoc, fileId);
 
         const provider = new WebsocketProvider(
@@ -36,6 +36,7 @@ export class YDocInitializerService {
         );
 
         await this.waitForProviderConnection(provider);
+
         return { ydoc, provider };
     }
 
@@ -43,26 +44,19 @@ export class YDocInitializerService {
         ydoc: Doc,
         fileId: string,
     ): Promise<void> {
-        // if (this.appEnvironment.getNodeEnv() === AppStateEnum.Development) {
-        //     ydoc.getMap('root').set('key', 'some value');
-        // } else {
-        await this.loadWithDocxService(ydoc, fileId);
-        // }
+        const version = await this.versionRepository.getLastVersion();
+
+        if (version) {
+            this.loadFromState(ydoc, version);
+        } else {
+            await this.loadWithDocxService(ydoc, fileId);
+        }
     }
 
-    //TODO Должна быть загрузка из snapshot, но пока это не работает
-    private async loadFromSnapshot(fileId: string) {
-        const version = await this.prismaService.version.findFirst({
-            where: {
-                file_id: fileId,
-            },
-        });
+    private loadFromState(ydoc: Doc, version: any) {
+        const decodeState = toUint8Array(version.state);
 
-        const doc = new Doc({ gc: false });
-        doc.getMap('root').set('key', 'some value');
-        const s = snapshot(doc);
-
-        throw new Error('Stop');
+        applyUpdate(ydoc, decodeState);
     }
 
     private async loadWithDocxService(ydoc: Doc, fileId: string) {
