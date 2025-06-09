@@ -1,12 +1,18 @@
-import * as Y from 'yjs';
+import {
+    applyUpdate,
+    Doc,
+    encodeStateAsUpdate,
+    equalSnapshots,
+    snapshot,
+} from 'yjs';
 import { Injectable } from '@nestjs/common';
 import { RoomRepository } from '@/rooms/room.repository';
 import { VersionRepository } from '@/versions/version.repository';
-import { Snapshot } from 'yjs';
-import { InterimVersionRedisDto } from '@/versions/dto/last.version.redis.dto';
-import { RoomDTO } from '@/rooms/dto/room.dto';
-import { generateUint8Array } from '@/common/app/app.environment';
 import { UpdateVersionDto } from '@/versions/dto/update.version.dto';
+import { fromUint8Array, toUint8Array } from 'js-base64';
+import { CreateVersionResponse } from '@/versions/responses/create.version.response';
+import { RoomDTO } from '@/rooms/dto/room.dto';
+import { InterimVersionsRedisDto } from '@/versions/dto/last.version.redis.dto';
 
 @Injectable()
 export class VersionService {
@@ -35,27 +41,67 @@ export class VersionService {
      * Сохранить новую версию документа,
      * сохраняется снапшот между версиями в sql-бд
      */
-    async saveVersion(roomId: string, name?: string) {
-        const room = this.roomRepository.getRoom(roomId);
-        const snapshot = Y.snapshot(room.ydoc);
+    async saveVersion(
+        fileId: string,
+        name?: string,
+    ): Promise<CreateVersionResponse> {
+        const room = this.roomRepository.getRoomByFileId(fileId);
+
         const lastVersion = await this.versionRepository.getLastVersion();
 
-        if (
-            !lastVersion ||
-            !Y.equalSnapshots(Y.decodeSnapshot(lastVersion.snapshot), snapshot)
-        ) {
-            const version = await this.versionRepository.createVersion(
-                snapshot,
-                room.file_id,
-                name,
+        if (!lastVersion) {
+            const version = await this.createVersion(room, name);
+
+            return this.getCreateVersionResponse(
+                version,
+                'Создана новая версия',
             );
-            return {
-                id: version.id,
-                file_id: version.file_id,
-                name: version.name,
-            };
+        } else {
+            if (this.isEqualSnapshots(lastVersion, room)) {
+                return this.getCreateVersionResponse(
+                    lastVersion,
+                    'Нет изменений в текущем документе, версия не создана',
+                );
+            } else {
+                const version = await this.createVersion(room, name);
+
+                return this.getCreateVersionResponse(
+                    version,
+                    'Создана последующая версия',
+                );
+            }
         }
-        return lastVersion;
+    }
+
+    private async createVersion(room: RoomDTO, name?: string) {
+        return await this.versionRepository.createVersion(
+            this.getStateFromYDocInBase64(room.ydoc),
+            room.file_id,
+            name,
+        );
+    }
+
+    private isEqualSnapshots(lastVersion: any, room: RoomDTO) {
+        const decodeState = toUint8Array(lastVersion.state);
+
+        const newYdoc = new Doc();
+
+        applyUpdate(newYdoc, decodeState);
+
+        const oldSnapshot = snapshot(room.ydoc);
+
+        const newSnapshot = snapshot(newYdoc);
+
+        return equalSnapshots(oldSnapshot, newSnapshot);
+    }
+
+    private getCreateVersionResponse(version: any, message: string) {
+        return {
+            id: version.id,
+            fileId: version.file_id,
+            name: version.name,
+            message: message,
+        };
     }
 
     /**
@@ -63,56 +109,29 @@ export class VersionService {
      * Промежуточная версия - версия, которая создается в комнате при редактировании
      * документа, не сохраняется в sql-бд, сохраняется в кэш
      */
-    async saveInterimVersion(roomId: string) {
-        const room = this.roomRepository.getRoom(roomId);
-        const snapshot = Y.snapshot(room.ydoc);
-        const lastInterimVersion =
-            await this.versionRepository.getLastInterimVersion(room.id);
+    async saveInterimVersion(fileId: string) {
+        const room = this.roomRepository.getRoomByFileId(fileId);
 
-        if (lastInterimVersion) {
-            const uint8Array = generateUint8Array(lastInterimVersion.snapshot);
+        const previousVersions =
+            await this.versionRepository.getInterimVersions(room.id);
 
-            if (
-                !this.isEqualSnapshots(Y.decodeSnapshot(uint8Array), snapshot)
-            ) {
-                return await this.createNewInterimVersion(
-                    room,
-                    lastInterimVersion,
-                    snapshot,
-                );
-            } else {
-                return {
-                    message: 'last interim version',
-                    version: lastInterimVersion,
-                };
-            }
-        } else {
-            return await this.createFirstInterimVersion(room, snapshot);
-        }
-    }
-
-    private isEqualSnapshots(fist: Snapshot, second: Snapshot) {
-        return Y.equalSnapshots(fist, second);
+        return await this.createNewInterimVersion(room, previousVersions);
     }
 
     private async createNewInterimVersion(
         room: RoomDTO,
-        lastInterimVersion: InterimVersionRedisDto,
-        snapshot: Snapshot,
+        previousVersions?: InterimVersionsRedisDto,
     ) {
-        const previousVersions =
-            await this.versionRepository.getInterimVersions(room.id);
-
-        const id = lastInterimVersion.id + 1;
-
-        const version = {
-            id,
-            file_id: lastInterimVersion.file_id,
-            snapshot: Y.encodeSnapshot(snapshot),
-        };
+        const isFirstVersion = !previousVersions;
+        const version = this.createVersionObject(
+            room,
+            isFirstVersion ? null : previousVersions,
+        );
 
         const versions = {
-            versions: [...previousVersions.versions, version],
+            versions: isFirstVersion
+                ? [version]
+                : [...previousVersions.versions, version],
         };
 
         await this.versionRepository.createInterimVersion(
@@ -120,25 +139,31 @@ export class VersionService {
             JSON.stringify(versions),
         );
 
-        return { message: 'new interim version', version };
+        return {
+            message: isFirstVersion
+                ? 'Первая промежуточная версия'
+                : 'Новая промежуточная версия',
+            version,
+        };
     }
 
-    private async createFirstInterimVersion(room: RoomDTO, snapshot: Snapshot) {
-        const version = {
-            id: 1,
-            file_id: room.file_id,
-            snapshot: Y.encodeSnapshot(snapshot),
+    private createVersionObject(
+        room: RoomDTO,
+        previousVersions?: InterimVersionsRedisDto | null,
+    ) {
+        const lastVersion =
+            previousVersions?.versions[previousVersions.versions.length - 1];
+
+        return {
+            id: lastVersion ? lastVersion.id + 1 : 1,
+            file_id: lastVersion?.file_id ?? room.file_id,
+            state: this.getStateFromYDocInBase64(room.ydoc),
         };
+    }
 
-        const versions = {
-            versions: [version],
-        };
+    private getStateFromYDocInBase64(ydoc: Doc) {
+        const stateAsUpdate = encodeStateAsUpdate(ydoc);
 
-        await this.versionRepository.createInterimVersion(
-            room.id,
-            JSON.stringify(versions),
-        );
-
-        return { message: 'first interim version', version };
+        return fromUint8Array(stateAsUpdate);
     }
 }

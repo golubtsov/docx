@@ -1,8 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { RoomGateway } from '@/rooms/room.gateway';
-import { CreateRoomResponse } from '@/rooms/responses/create.room.response';
-import { polyglot } from '@/common/lang/polyglot';
 import { JoinRoomResponse } from '@/rooms/responses/join.room.response';
+import { polyglot } from '@/common/lang/polyglot';
 import { LeaveRoomResponse } from '@/rooms/responses/leave.room.response';
 import { DeleteRoomResponse } from '@/rooms/responses/delete.room.response';
 import { createSocket } from '@/tests/utils';
@@ -47,7 +46,7 @@ describe('RoomGateway', () => {
     it('create room', (done) => {
         const socket = createSocket(path);
 
-        socket.on('roomCreated', (response: CreateRoomResponse) => {
+        socket.on('roomCreated', (response: JoinRoomResponse) => {
             socket.close();
             expect(response).toHaveProperty('roomId');
             expect(response).toHaveProperty('host');
@@ -65,7 +64,7 @@ describe('RoomGateway', () => {
         socket.on('roomCreated', () => {
             socket.emit('createRoom');
 
-            socket.on('roomCreated', (response: CreateRoomResponse) => {
+            socket.on('roomCreated', (response: JoinRoomResponse) => {
                 socket.close();
                 expect(response.message).toEqual(
                     polyglot.t('room.error.multiple'),
@@ -82,7 +81,7 @@ describe('RoomGateway', () => {
 
         socket1.emit('createRoom');
 
-        socket1.on('roomCreated', (response: CreateRoomResponse) => {
+        socket1.on('roomCreated', (response: JoinRoomResponse) => {
             expect(response).toHaveProperty('roomId');
 
             socket2.emit('joinRoom', response.roomId);
@@ -138,7 +137,7 @@ describe('RoomGateway', () => {
 
         socket1.emit('createRoom');
 
-        socket1.on('roomCreated', (response: CreateRoomResponse) => {
+        socket1.on('roomCreated', (response: JoinRoomResponse) => {
             socket2.emit('joinRoom', response.roomId);
 
             socket2.on('roomJoined', () => {
@@ -172,7 +171,7 @@ describe('RoomGateway', () => {
 
         socket1.emit('createRoom');
 
-        socket1.on('roomCreated', (response: CreateRoomResponse) => {
+        socket1.on('roomCreated', (response: JoinRoomResponse) => {
             socket2.emit('joinRoom', response.roomId);
 
             socket2.on('roomJoined', () => {
@@ -198,7 +197,7 @@ describe('RoomGateway', () => {
 
         socket1.emit('createRoom');
 
-        socket1.on('roomCreated', (response: CreateRoomResponse) => {
+        socket1.on('roomCreated', (response: JoinRoomResponse) => {
             socket2.emit('joinRoom', response.roomId);
 
             socket2.on('roomJoined', () => {

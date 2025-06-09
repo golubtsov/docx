@@ -1,14 +1,11 @@
-import { polyglot } from '@/common/lang/polyglot';
 import { Injectable } from '@nestjs/common';
 import { RoomRepository } from '@/rooms/room.repository';
-import { CreateRoomResponse } from '@/rooms/responses/create.room.response';
 import { JoinRoomResponse } from '@/rooms/responses/join.room.response';
-import { DeleteRoomResponse } from '@/rooms/responses/delete.room.response';
-import { LeaveRoomResponse } from '@/rooms/responses/leave.room.response';
 import { RedisService } from '@/common/app/redis.service';
-import { AppStateEnum } from '@/common/app/app.state.enum';
 import { AppEnvironment } from '@/common/app/app.environment';
 import { YDocInitializerService } from '@/common/yjs/ydoc.initializer.service';
+import { Socket } from 'socket.io';
+import { RoomDTO } from '@/rooms/dto/room.dto';
 
 @Injectable()
 export class RoomService {
@@ -19,66 +16,68 @@ export class RoomService {
         private readonly yDocInitializer: YDocInitializerService,
     ) {}
 
-    async createRoom(
-        clientId: string,
+    async joinRoomNew(
+        client: Socket,
         fileId: string,
-    ): Promise<CreateRoomResponse> {
+    ): Promise<JoinRoomResponse> {
+        const room = this.roomRepository.getRoomByFileId(fileId);
+
+        return room
+            ? this.joinInAlreadyExistsRoom(room, client, fileId)
+            : await this.createRoom(fileId, client);
+    }
+
+    private joinInAlreadyExistsRoom(
+        room: RoomDTO,
+        client: Socket,
+        fileId: string,
+    ): JoinRoomResponse {
+        room.clients.add(client.id);
+
+        this.roomRepository.joinRoom(client.id, room.id);
+
+        return {
+            roomId: room.id,
+            host: this.roomRepository.getYHost(),
+            fileId,
+            message: 'Подключение к уже существующую комнату',
+        };
+    }
+
+    private async createRoom(
+        fileId: string,
+        client: Socket,
+    ): Promise<JoinRoomResponse> {
         const roomId = this.generateRoomId();
         const { ydoc, provider } =
             await this.yDocInitializer.createYDocWithProvider(roomId, fileId);
 
-        this.roomRepository.saveRoom(roomId, clientId, provider, ydoc, fileId);
+        this.roomRepository.saveRoom(roomId, client.id, provider, ydoc, fileId);
 
         return {
             roomId,
             host: this.roomRepository.getYHost(),
             fileId,
+            message: 'Создана новая комнату',
         };
     }
 
     private generateRoomId(): string {
-        if (this.appEnv.getNodeEnv() === AppStateEnum.Development) {
-            return '1111'; // для тестирования
-        }
         return Math.random().toString(36).substring(2, 8);
     }
 
-    joinRoom(clientId: string, roomId: string): JoinRoomResponse {
-        const room = this.roomRepository.getRoom(roomId);
+    disconnect(clientId: string) {
+        const roomId = this.roomRepository.getRoomIdByClientId(clientId);
 
-        room.clients.add(clientId);
+        const room = this.roomRepository.getRoomById(roomId);
 
-        this.roomRepository.joinRoom(clientId, roomId);
+        this.roomRepository.deleteClientRoom(clientId);
+        room.clients.delete(clientId);
 
-        return {
-            success: true,
-            message: polyglot.t('room.connected'),
-            room: room,
-        };
-    }
-
-    leaveRoom(clientId: string): LeaveRoomResponse {
-        const roomId = this.roomRepository.leaveRoom(clientId);
-
-        return { success: true, roomId, message: polyglot.t('room.left') };
-    }
-
-    deleteRoom(roomId: string, clientId: string): DeleteRoomResponse {
-        const room = this.roomRepository.getRoom(roomId);
-
-        room.provider.destroy();
-
-        room.clients.forEach(() =>
-            this.roomRepository.deleteClientRooms(clientId),
-        );
-
-        this.redisService.delete(roomId);
-
-        this.roomRepository.deleteRoom(roomId);
-
-        return {
-            success: true,
-            message: polyglot.t('room.deleted'),
-        };
+        if (room.clients.size === 0) {
+            room.provider.destroy();
+            this.roomRepository.deleteRoom(room.id);
+            this.redisService.delete(roomId);
+        }
     }
 }

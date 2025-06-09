@@ -6,8 +6,10 @@ import { AppEnvironment } from '@/common/app/app.environment';
 
 @Injectable()
 export class RoomRepository {
+    /** Map<fileId: string, RoomDto> */
     private rooms = new Map<string, RoomDTO>();
 
+    /** Map<clientId: string, roomId: string> */
     private clientRooms = new Map<string, string>();
 
     constructor(private readonly appEnv: AppEnvironment) {
@@ -20,7 +22,7 @@ export class RoomRepository {
         provider: WebsocketProvider,
         ydoc: Y.Doc,
         fileId: string,
-    ): void {
+    ) {
         const room: RoomDTO = {
             id: roomId,
             owner_id: clientId,
@@ -29,7 +31,7 @@ export class RoomRepository {
             ydoc,
             file_id: fileId,
         };
-        this.rooms.set(roomId, room);
+        this.rooms.set(fileId, room);
         this.clientRooms.set(clientId, roomId);
     }
 
@@ -41,33 +43,31 @@ export class RoomRepository {
         return this.clientRooms.has(clientId);
     }
 
-    roomExists(roomId: string) {
-        return !!this.rooms.get(roomId);
-    }
-
     joinRoom(clientId: string, roomId: string) {
         this.clientRooms.set(clientId, roomId);
     }
 
-    getRoom(roomId: string): RoomDTO | undefined {
-        return this.rooms.get(roomId);
+    getRoomByFileId(fileId: string): RoomDTO | undefined {
+        return this.rooms.get(fileId);
     }
 
-    leaveRoom(clientId: string) {
-        const roomId = this.clientRooms.get(clientId);
-
-        this.getRoom(roomId)?.clients.delete(clientId);
-
-        this.clientRooms.delete(clientId);
-
-        return roomId;
+    getRoomIdByClientId(clientId: string) {
+        return this.clientRooms.get(clientId);
     }
 
     deleteRoom(roomId: string) {
         return this.rooms.delete(roomId);
     }
 
-    deleteClientRooms(clientId: string) {
+    getRoomById(roomId: string): RoomDTO {
+        const rooms = this.rooms.values();
+
+        for (const room of rooms) {
+            if (roomId === room.id) return room;
+        }
+    }
+
+    deleteClientRoom(clientId: string) {
         return this.clientRooms.delete(clientId);
     }
 

@@ -1,5 +1,3 @@
-import * as Y from 'yjs';
-import { Snapshot } from 'yjs';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/common/app/prisma.service';
 import { RedisService } from '@/common/app/redis.service';
@@ -43,11 +41,11 @@ export class VersionRepository {
         });
     }
 
-    async createVersion(snapshot: Snapshot, fileId: string, name?: string) {
+    async createVersion(state: string, fileId: string, name?: string) {
         return this.prisma.version.create({
             data: {
                 file_id: fileId,
-                snapshot: Y.encodeSnapshot(snapshot),
+                state,
                 name: name
                     ? name
                     : `Новая версия ${new Date().toISOString().replace('T', ' ').substring(0, 19)}`,
@@ -64,7 +62,7 @@ export class VersionRepository {
     }
 
     async getInterimVersions(roomId: string) {
-        return this.redisService.get<InterimVersionsRedisDto>(roomId);
+        return await this.redisService.get<InterimVersionsRedisDto>(roomId);
     }
 
     async createInterimVersion(

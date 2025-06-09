@@ -11,7 +11,7 @@ model Version {
   id        Int      @id @default(autoincrement())
   file_id   String
   name      String
-  snapshot  Bytes
+  state     String
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
 }

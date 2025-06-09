@@ -1,4 +1,6 @@
 export interface CreateVersionResponse {
     id: number;
-    file_id: number;
+    fileId: string;
+    name: string;
+    message?: string;
 }
