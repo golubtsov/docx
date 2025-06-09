@@ -151,6 +151,7 @@ export class VersionService {
         room: RoomDTO,
         previousVersions?: InterimVersionsRedisDto | null,
     ) {
+        //TODO VersionRepository.getLastInterimVersion()
         const lastVersion =
             previousVersions?.versions[previousVersions.versions.length - 1];
 

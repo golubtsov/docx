@@ -17,8 +17,8 @@ export class RoomGateway extends GatewayDefaultConnections {
         super();
     }
 
-    handleDisconnect(client: Socket) {
-        this.roomService.disconnect(client.id);
+    async handleDisconnect(client: Socket) {
+        await this.roomService.disconnect(client.id);
     }
 
     @UseGuards(CheckFileIdGuard, UserConnectedAlreadyGuard)

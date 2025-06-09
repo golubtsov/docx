@@ -18,5 +18,5 @@ export abstract class GatewayDefaultConnections
         });
     }
 
-    handleDisconnect(client: Socket) {}
+    async handleDisconnect(client: Socket) {}
 }

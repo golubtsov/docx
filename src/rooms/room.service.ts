@@ -2,18 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { RoomRepository } from '@/rooms/room.repository';
 import { JoinRoomResponse } from '@/rooms/responses/join.room.response';
 import { RedisService } from '@/common/app/redis.service';
-import { AppEnvironment } from '@/common/app/app.environment';
 import { YDocInitializerService } from '@/common/yjs/ydoc.initializer.service';
 import { Socket } from 'socket.io';
 import { RoomDTO } from '@/rooms/dto/room.dto';
+import { VersionRepository } from '@/versions/version.repository';
+import { VersionService } from '@/versions/version.service';
 
 @Injectable()
 export class RoomService {
     constructor(
         private readonly roomRepository: RoomRepository,
         private readonly redisService: RedisService,
-        private readonly appEnv: AppEnvironment,
         private readonly yDocInitializer: YDocInitializerService,
+        private readonly versionRepository: VersionRepository,
+        private readonly versionService: VersionService,
     ) {}
 
     async joinRoomNew(
@@ -66,18 +68,32 @@ export class RoomService {
         return Math.random().toString(36).substring(2, 8);
     }
 
-    disconnect(clientId: string) {
+    async disconnect(clientId: string) {
         const roomId = this.roomRepository.getRoomIdByClientId(clientId);
 
         const room = this.roomRepository.getRoomById(roomId);
 
-        this.roomRepository.deleteClientRoom(clientId);
         room.clients.delete(clientId);
 
+        this.roomRepository.deleteClientRoom(clientId);
+
+        await this.saveInterimVersionsFromRedis(room);
+
+        this.redisService.delete(roomId);
+
+        room.provider.destroy();
+
+        this.roomRepository.deleteRoom(room.id);
+    }
+
+    private async saveInterimVersionsFromRedis(room: RoomDTO) {
         if (room.clients.size === 0) {
-            room.provider.destroy();
-            this.roomRepository.deleteRoom(room.id);
-            this.redisService.delete(roomId);
+            const lastInterimVersion =
+                this.versionRepository.getLastInterimVersion(room.id);
+
+            if (lastInterimVersion) {
+                await this.versionService.saveVersion(room.file_id);
+            }
         }
     }
 }
