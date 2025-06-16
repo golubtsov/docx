@@ -63,13 +63,13 @@ export class LogicCenterService {
 
             if (response.status >= 200 && response.status < 300) {
                 console.log(
-                    'DOCX файл загружен',
+                    '#LogicCenter DOCX файл загружен',
                     response.status,
                     response.data,
                 );
             } else {
                 console.warn(
-                    'Не удалось обновить файл',
+                    '#LogicCenter Не удалось обновить файл',
                     response.status,
                     response.data,
                 );

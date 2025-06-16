@@ -44,7 +44,7 @@ export class RoomService {
             roomId: room.id,
             host: this.roomRepository.getYHost(),
             fileId,
-            message: 'Подключение к уже существующую комнату',
+            message: 'Подключение к уже существующей комнате',
         };
     }
 
@@ -62,7 +62,7 @@ export class RoomService {
             roomId,
             host: this.roomRepository.getYHost(),
             fileId,
-            message: 'Создана новая комнату',
+            message: 'Создана новая комната',
         };
     }
 

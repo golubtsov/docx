@@ -13,12 +13,14 @@ import { fromUint8Array, toUint8Array } from 'js-base64';
 import { CreateVersionResponse } from '@/versions/responses/create.version.response';
 import { RoomDTO } from '@/rooms/dto/room.dto';
 import { InterimVersionsRedisDto } from '@/versions/dto/last.version.redis.dto';
+import { LogicCenterService } from '@/common/api/logic.center.service';
 
 @Injectable()
 export class VersionService {
     constructor(
         private readonly roomRepository: RoomRepository,
         private readonly versionRepository: VersionRepository,
+        private readonly logicCenterService: LogicCenterService,
     ) {}
 
     findAll() {
@@ -52,6 +54,8 @@ export class VersionService {
         if (!lastVersion) {
             const version = await this.createVersion(room, name);
 
+            await this.logicCenterService.updateFileFromYjs(room);
+
             return this.getCreateVersionResponse(
                 version,
                 'Создана новая версия',
@@ -64,6 +68,8 @@ export class VersionService {
                 );
             } else {
                 const version = await this.createVersion(room, name);
+
+                await this.logicCenterService.updateFileFromYjs(room);
 
                 return this.getCreateVersionResponse(
                     version,
