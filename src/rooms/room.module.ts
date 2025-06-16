@@ -10,6 +10,7 @@ import { YDocInitializerService } from '@/common/yjs/ydoc.initializer.service';
 import { PrismaService } from '@/common/app/prisma.service';
 import { LogicCenterService } from '@/common/api/logic.center.service';
 import { VersionRepository } from '@/versions/version.repository';
+import { VersionService } from '@/versions/version.service';
 
 @Module({
     providers: [
@@ -24,6 +25,7 @@ import { VersionRepository } from '@/versions/version.repository';
         PrismaService,
         LogicCenterService,
         VersionRepository,
+        VersionService
     ],
     exports: [RoomService, RoomRepository],
 })
