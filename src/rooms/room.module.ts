@@ -25,7 +25,7 @@ import { VersionService } from '@/versions/version.service';
         PrismaService,
         LogicCenterService,
         VersionRepository,
-        VersionService
+        VersionService,
     ],
     exports: [RoomService, RoomRepository],
 })

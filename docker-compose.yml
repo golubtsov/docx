@@ -24,6 +24,7 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
+      - LOGIC_CENTER_URL=${LOGIC_CENTER_URL}
     depends_on:
       postgres:
         condition: service_healthy

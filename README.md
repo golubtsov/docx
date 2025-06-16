@@ -1,4 +1,7 @@
 ## Запуск проекта    
+
+В docxservice пакете ветка должна быть develop включена
+
 ```
 git clone  https://gitlab.els24.com/epicdoc/docxservice.git packages/docxservice
 

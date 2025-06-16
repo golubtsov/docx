@@ -1,12 +1,20 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { LogicCenterResponseErrorDto } from '@/common/api/logic.center.response.error.dto';
+import { YsyncAdapterService } from '@/common/yjs/ysync.adapter.service';
+import { DocumentService } from '@docxservice/documentservice';
+import { RoomDTO } from '@/rooms/dto/room.dto';
+import { logicCenterUrlHelper } from '@/common/app/app.environment';
 
 @Injectable()
 export class LogicCenterService {
-    private readonly LOGIC_CENTER_HOST = 'http://10.0.7.181/logiccenter';
+    private readonly LOGIC_CENTER_HOST = logicCenterUrlHelper();
 
-    constructor() {}
+    private documentService: DocumentService;
+
+    constructor(private readonly ysyncAdapterService: YsyncAdapterService) {
+        this.documentService = new DocumentService();
+    }
 
     async getFileInfo(id: string): Promise<any | LogicCenterResponseErrorDto> {
         return await this.sendRequest(
@@ -16,7 +24,74 @@ export class LogicCenterService {
         );
     }
 
-    uploadFile() {}
+    //TODO упростить
+    async updateFileFromYjs(room: RoomDTO): Promise<void> {
+        try {
+            const adap = new YsyncAdapterService();
+            const componentInterface = adap.yToNode(room.ydoc.getMap('root'));
+
+            const ds = new DocumentService();
+            await ds.setInternalDocument(componentInterface);
+
+            const blob = await ds.getBlob();
+
+            const docxBlob =
+                blob.type ===
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                    ? blob
+                    : new Blob([blob], {
+                          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                      });
+
+            const docxFile = new File([docxBlob], `${room.file_id}.docx`, {
+                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            });
+
+            const formData = new FormData();
+            formData.append('content', docxFile);
+
+            const response = await axios.patch(
+                `${this.LOGIC_CENTER_HOST}/resource/${room.file_id}`,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                    validateStatus: (status) => status < 500,
+                },
+            );
+
+            if (response.status >= 200 && response.status < 300) {
+                console.log(
+                    'DOCX файл загружен',
+                    response.status,
+                    response.data,
+                );
+            } else {
+                console.warn(
+                    'Не удалось обновить файл',
+                    response.status,
+                    response.data,
+                );
+            }
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                console.error('Network error:', err.message);
+                if (err.response) {
+                    console.error(
+                        'Server error:',
+                        err.response.status,
+                        err.response.data,
+                    );
+                }
+            } else if (err instanceof Error) {
+                console.error('Error:', err.message);
+            } else {
+                console.error('Unknown error');
+            }
+            throw err;
+        }
+    }
 
     async downloadFile(
         url: string,
@@ -33,7 +108,7 @@ export class LogicCenterService {
     private async sendRequest(
         url: string,
         config?: AxiosRequestConfig,
-        method?: string,
+        parentMethod?: string,
     ): Promise<any | LogicCenterResponseErrorDto> {
         try {
             const response = await axios.get(url, config);
@@ -45,13 +120,13 @@ export class LogicCenterService {
             return {
                 status: false,
                 error: `LogicCenter обработал запрос, статус ответа - ${response.status}`,
-                method,
+                parentMethod,
             };
         } catch (err) {
             return {
                 status: false,
                 error: 'Ошибка при обращении в LogicCenter',
-                method,
+                parentMethod,
             };
         }
     }

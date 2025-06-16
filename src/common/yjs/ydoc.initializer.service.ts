@@ -81,7 +81,10 @@ export class YDocInitializerService {
 
         const adapter = new YsyncAdapterService();
 
-        adapter.init(ydoc, documentService.getDocument());
+        adapter.nodeToY(
+            documentService.getInternalDocument(),
+            ydoc.getMap('root'),
+        );
 
         fs.unlinkSync(pathToFile);
     }

@@ -7,6 +7,7 @@ import { Socket } from 'socket.io';
 import { RoomDTO } from '@/rooms/dto/room.dto';
 import { VersionRepository } from '@/versions/version.repository';
 import { VersionService } from '@/versions/version.service';
+import { LogicCenterService } from '@/common/api/logic.center.service';
 
 @Injectable()
 export class RoomService {
@@ -16,6 +17,7 @@ export class RoomService {
         private readonly yDocInitializer: YDocInitializerService,
         private readonly versionRepository: VersionRepository,
         private readonly versionService: VersionService,
+        private readonly logicCenterService: LogicCenterService,
     ) {}
 
     async joinRoomNew(
@@ -72,6 +74,8 @@ export class RoomService {
         const roomId = this.roomRepository.getRoomIdByClientId(clientId);
 
         const room = this.roomRepository.getRoomById(roomId);
+
+        await this.logicCenterService.updateFileFromYjs(room);
 
         room.clients.delete(clientId);
 
