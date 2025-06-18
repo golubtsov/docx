@@ -4,7 +4,6 @@ import { RoomService } from './room.service';
 import { polyglot } from '@/common/lang/polyglot';
 import { GatewayDefaultConnections } from '@/common/app/gateway.default.connections';
 import { UseGuards } from '@nestjs/common';
-import { UserConnectedAlreadyGuard } from '@/rooms/guards/user.connected.already.guard';
 import { wsPortHelper } from '@/common/app/app.environment';
 import { CheckFileIdGuard } from '@/rooms/guards/check.file.id.guard';
 
@@ -21,7 +20,7 @@ export class RoomGateway extends GatewayDefaultConnections {
         await this.roomService.disconnect(client.id);
     }
 
-    @UseGuards(CheckFileIdGuard, UserConnectedAlreadyGuard)
+    @UseGuards(CheckFileIdGuard)
     @SubscribeMessage('joinRoom')
     async handleJoinRoom(client: Socket, data: any) {
         try {
@@ -29,7 +28,7 @@ export class RoomGateway extends GatewayDefaultConnections {
 
             const result = await this.roomService.joinRoomNew(
                 client,
-                json.fileId,
+                json.resourceId,
             );
 
             client.emit('roomJoined', result);

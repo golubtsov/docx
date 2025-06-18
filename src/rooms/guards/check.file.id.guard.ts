@@ -12,12 +12,12 @@ export class CheckFileIdGuard implements CanActivate {
         try {
             const data = JSON.parse(context.switchToWs().getData());
 
-            const fileInfo = await this.logicCenterService.getFileInfo(
-                data?.fileId,
+            const resourceInfo = await this.logicCenterService.getResourceInfo(
+                data?.resourceId,
             );
 
-            if (fileInfo?.status === false) {
-                client.emit('guard', fileInfo);
+            if (resourceInfo?.status === false) {
+                client.emit('guard', resourceInfo);
                 return false;
             }
 

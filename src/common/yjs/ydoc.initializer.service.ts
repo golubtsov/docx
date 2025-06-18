@@ -22,11 +22,11 @@ export class YDocInitializerService {
 
     async createYDocWithProvider(
         roomId: string,
-        fileId: string,
+        resource: any,
     ): Promise<{ ydoc: Doc; provider: WebsocketProvider }> {
         const ydoc = new Doc();
 
-        await this.initializeYDocContent(ydoc, fileId);
+        await this.initializeYDocContent(ydoc, resource);
 
         const provider = new WebsocketProvider(
             this.roomRepository.getYHost(),
@@ -42,14 +42,14 @@ export class YDocInitializerService {
 
     private async initializeYDocContent(
         ydoc: Doc,
-        fileId: string,
+        resource: any,
     ): Promise<void> {
         const version = await this.versionRepository.getLastVersion();
 
         if (version) {
             this.loadFromState(ydoc, version);
         } else {
-            await this.loadWithDocxService(ydoc, fileId);
+            await this.loadWithDocxService(ydoc, resource);
         }
     }
 
@@ -59,8 +59,22 @@ export class YDocInitializerService {
         applyUpdate(ydoc, decodeState);
     }
 
-    private async loadWithDocxService(ydoc: Doc, fileId: string) {
-        const fileInfo = await this.logicCenterService.getFileInfo(fileId);
+    private async loadWithDocxService(ydoc: Doc, resource: any) {
+        const resourceInfo = await this.logicCenterService.getResourceInfo(
+            resource.id,
+        );
+
+        if (!resourceInfo) {
+            throw new Error('Ресурс не найден');
+        }
+
+        if (resourceInfo?.content === null) {
+            throw new Error('Ресурс найден, но поле content === null');
+        }
+
+        const fileInfo = await this.logicCenterService.getFileInfo(
+            resourceInfo.content,
+        );
 
         const buf = await this.logicCenterService.downloadFile(
             fileInfo.downloadUrl,
@@ -71,7 +85,7 @@ export class YDocInitializerService {
             throw new Error(fileInfo);
         }
 
-        const pathToFile = `${this.pathToStorage}/${fileId}.docx`;
+        const pathToFile = `${this.pathToStorage}/${fileInfo.id}.docx`;
 
         fs.writeFileSync(pathToFile, <Buffer>buf);
 

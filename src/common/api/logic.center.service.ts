@@ -10,10 +10,16 @@ import { logicCenterUrlHelper } from '@/common/app/app.environment';
 export class LogicCenterService {
     private readonly LOGIC_CENTER_HOST = logicCenterUrlHelper();
 
-    private documentService: DocumentService;
+    constructor() {}
 
-    constructor(private readonly ysyncAdapterService: YsyncAdapterService) {
-        this.documentService = new DocumentService();
+    async getResourceInfo(
+        id: string,
+    ): Promise<any | LogicCenterResponseErrorDto> {
+        return await this.sendRequest(
+            `${this.LOGIC_CENTER_HOST}/resource/${id}`,
+            {},
+            'getResourceInfo',
+        );
     }
 
     async getFileInfo(id: string): Promise<any | LogicCenterResponseErrorDto> {

@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import 'module-alias/register.js';
 import { AppEnvironment } from '@/common/app/app.environment';
 import { ConfigService } from '@nestjs/config';
+import { AppStateEnum } from './common/app/app.state.enum';
 
 async function bootstrap() {
     const appEnv = new AppEnvironment(new ConfigService());
@@ -10,6 +10,7 @@ async function bootstrap() {
     const yjsPort = appEnv.getYJSPort();
     const wsPort = appEnv.getWsPort();
     const app = await NestFactory.create(AppModule);
+    appEnv.nodeEnv === AppStateEnum.Development ? app.enableCors() : null;
     await app.listen(appPort, '0.0.0.0');
     console.log('Приложение запущено на', appPort, 'порту');
     console.log('WS запущен на', wsPort, 'порту');

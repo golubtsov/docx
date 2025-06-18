@@ -22,13 +22,30 @@ export class RoomService {
 
     async joinRoomNew(
         client: Socket,
-        fileId: string,
+        resourceId: string,
     ): Promise<JoinRoomResponse> {
-        const room = this.roomRepository.getRoomByFileId(fileId);
+        const resource =
+            await this.logicCenterService.getResourceInfo(resourceId);
+
+        if (resource.status === false) {
+            return {
+                message: resource.error,
+            };
+        }
+
+        if (resource.content === null) {
+            return {
+                message: 'Resource найден, но content === null',
+            };
+        }
+
+        const room = this.roomRepository.getRoomByFileId(resource.content);
+
+        console.log(room?.file_id);
 
         return room
-            ? this.joinInAlreadyExistsRoom(room, client, fileId)
-            : await this.createRoom(fileId, client);
+            ? this.joinInAlreadyExistsRoom(room, client, resource.content)
+            : await this.createRoom(resource, client);
     }
 
     private joinInAlreadyExistsRoom(
@@ -49,19 +66,25 @@ export class RoomService {
     }
 
     private async createRoom(
-        fileId: string,
+        resource: any,
         client: Socket,
     ): Promise<JoinRoomResponse> {
         const roomId = this.generateRoomId();
         const { ydoc, provider } =
-            await this.yDocInitializer.createYDocWithProvider(roomId, fileId);
+            await this.yDocInitializer.createYDocWithProvider(roomId, resource);
 
-        this.roomRepository.saveRoom(roomId, client.id, provider, ydoc, fileId);
+        this.roomRepository.saveRoom(
+            roomId,
+            client.id,
+            provider,
+            ydoc,
+            resource.content,
+        );
 
         return {
             roomId,
             host: this.roomRepository.getYHost(),
-            fileId,
+            fileId: resource.content,
             message: 'Создана новая комната',
         };
     }

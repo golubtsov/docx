@@ -19,7 +19,7 @@ export class AppEnvironment {
 
     constructor(private readonly configService: ConfigService) {}
 
-    private get nodeEnv(): string {
+    get nodeEnv(): string {
         return this.configService.get<string>('NODE_ENV');
     }
 
