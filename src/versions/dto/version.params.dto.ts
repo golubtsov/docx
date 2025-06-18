@@ -19,7 +19,8 @@ export class VersionParamsDto {
     })
     order: string = orderParams[0];
 
-    @IsOptional()
-    @IsString()
+    @IsString({
+        message: 'Поле resourceId обязательное для заполнения',
+    })
     resourceId?: string;
 }
