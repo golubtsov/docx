@@ -6,18 +6,20 @@ import {
     Put,
     UseGuards,
     Body,
+    Query,
 } from '@nestjs/common';
 import { VersionService } from '@/versions/version.service';
 import { VersionExistsGuard } from '@/versions/guards/version.exists.guard';
 import { UpdateVersionDto } from '@/versions/dto/update.version.dto';
+import { VersionParamsDto } from '@/versions/dto/version.params.dto';
 
 @Controller('/versions')
 export class VersionController {
     constructor(private readonly versionService: VersionService) {}
 
     @Get()
-    findAll() {
-        return this.versionService.findAll();
+    findAll(@Query() params: VersionParamsDto) {
+        return this.versionService.findAll(params);
     }
 
     @Get(':id')

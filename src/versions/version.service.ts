@@ -14,6 +14,7 @@ import { CreateVersionResponse } from '@/versions/responses/create.version.respo
 import { RoomDTO } from '@/rooms/dto/room.dto';
 import { InterimVersionsRedisDto } from '@/versions/dto/last.version.redis.dto';
 import { LogicCenterService } from '@/common/api/logic.center.service';
+import { VersionParamsDto } from '@/versions/dto/version.params.dto';
 
 @Injectable()
 export class VersionService {
@@ -23,8 +24,8 @@ export class VersionService {
         private readonly logicCenterService: LogicCenterService,
     ) {}
 
-    findAll() {
-        return this.versionRepository.findAll();
+    findAll(params: VersionParamsDto) {
+        return this.versionRepository.findAll(params);
     }
 
     findOne(id: number) {

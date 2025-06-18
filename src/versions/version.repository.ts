@@ -6,6 +6,8 @@ import {
     InterimVersionsRedisDto,
 } from '@/versions/dto/last.version.redis.dto';
 import { UpdateVersionDto } from '@/versions/dto/update.version.dto';
+import { VersionParamsDto } from '@/versions/dto/version.params.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class VersionRepository {
@@ -14,8 +16,21 @@ export class VersionRepository {
         private redisService: RedisService,
     ) {}
 
-    findAll() {
-        return this.prisma.version.findMany();
+    findAll(params: VersionParamsDto) {
+        const orderBy: Prisma.VersionOrderByWithRelationInput = params.orderBy
+            ? { [params.orderBy]: params.order || 'asc' }
+            : {};
+
+        return this.prisma.version.findMany({
+            orderBy: orderBy,
+            select: {
+                id: true,
+                file_id: true,
+                name: true,
+                updatedAt: true,
+                createdAt: true,
+            },
+        });
     }
 
     findOne(id: number) {
