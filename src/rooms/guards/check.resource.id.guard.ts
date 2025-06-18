@@ -33,7 +33,7 @@ export class CheckResourceIdGuard implements CanActivate {
             client.emit('guard', {
                 status: false,
                 message:
-                    'Ошибка при проверки комнаты, возможно передан некорректный JSON',
+                    'Ошибка при проверки body, возможно передан некорректный JSON',
             });
             return false;
         }

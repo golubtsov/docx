@@ -39,17 +39,17 @@ export class RoomService {
             };
         }
 
-        const room = this.roomRepository.getRoomByFileId(resource.content);
+        const room = this.roomRepository.getRoomByResourceId(resourceId);
 
         return room
             ? this.joinInAlreadyExistsRoom(room, client, resource.content)
-            : await this.createRoom(resource, client);
+            : await this.createRoom(resourceId, client);
     }
 
     private joinInAlreadyExistsRoom(
         room: RoomDTO,
         client: Socket,
-        fileId: string,
+        resourceId: string,
     ): JoinRoomResponse {
         room.clients.add(client.id);
 
@@ -58,32 +58,34 @@ export class RoomService {
         return {
             roomId: room.id,
             host: this.roomRepository.getYHost(),
-            fileId,
+            resourceId,
             message: 'Подключение к уже существующей комнате',
         };
     }
 
     private async createRoom(
-        resource: any,
+        resourceId: string,
         client: Socket,
     ): Promise<JoinRoomResponse> {
         const roomId = this.generateRoomId();
         const { ydoc, provider } =
-            await this.yDocInitializer.createYDocWithProvider(roomId, resource);
+            await this.yDocInitializer.createYDocWithProvider(
+                roomId,
+                resourceId,
+            );
 
         this.roomRepository.saveRoom(
             roomId,
             client.id,
             provider,
             ydoc,
-            resource.content,
-            resource.id,
+            resourceId,
         );
 
         return {
             roomId,
             host: this.roomRepository.getYHost(),
-            fileId: resource.content,
+            resourceId,
             message: 'Создана новая комната',
         };
     }
@@ -118,7 +120,7 @@ export class RoomService {
                 this.versionRepository.getLastInterimVersion(room.id);
 
             if (lastInterimVersion) {
-                await this.versionService.saveVersion(room.fileId);
+                await this.versionService.saveVersion(room.resourceId);
             }
         }
     }

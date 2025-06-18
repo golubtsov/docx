@@ -22,11 +22,11 @@ export class YDocInitializerService {
 
     async createYDocWithProvider(
         roomId: string,
-        resource: any,
+        resourceId: string,
     ): Promise<{ ydoc: Doc; provider: WebsocketProvider }> {
         const ydoc = new Doc();
 
-        await this.initializeYDocContent(ydoc, resource);
+        await this.initializeYDocContent(ydoc, resourceId);
 
         const provider = new WebsocketProvider(
             this.roomRepository.getYHost(),
@@ -42,14 +42,14 @@ export class YDocInitializerService {
 
     private async initializeYDocContent(
         ydoc: Doc,
-        resource: any,
+        resourceId: string,
     ): Promise<void> {
         const version = await this.versionRepository.getLastVersion();
 
         if (version) {
             this.loadFromState(ydoc, version);
         } else {
-            await this.loadWithDocxService(ydoc, resource);
+            await this.loadWithDocxService(ydoc, resourceId);
         }
     }
 
@@ -59,10 +59,9 @@ export class YDocInitializerService {
         applyUpdate(ydoc, decodeState);
     }
 
-    private async loadWithDocxService(ydoc: Doc, resource: any) {
-        const resourceInfo = await this.logicCenterService.getResourceInfo(
-            resource.id,
-        );
+    private async loadWithDocxService(ydoc: Doc, resourceId: string) {
+        const resourceInfo =
+            await this.logicCenterService.getResourceInfo(resourceId);
 
         if (!resourceInfo) {
             throw new Error('Ресурс не найден');

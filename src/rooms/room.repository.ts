@@ -6,7 +6,7 @@ import { AppEnvironment } from '@/common/app/app.environment';
 
 @Injectable()
 export class RoomRepository {
-    /** Map<fileId: string, RoomDto> */
+    /** Map<resourceId: string, RoomDto> */
     private rooms = new Map<string, RoomDTO>();
 
     /** Map<clientId: string, roomId: string> */
@@ -21,7 +21,6 @@ export class RoomRepository {
         clientId: string,
         provider: WebsocketProvider,
         ydoc: Y.Doc,
-        fileId: string,
         resourceId: string,
     ) {
         const room: RoomDTO = {
@@ -30,10 +29,9 @@ export class RoomRepository {
             provider,
             clients: new Set([clientId]),
             ydoc,
-            fileId,
             resourceId,
         };
-        this.rooms.set(fileId, room);
+        this.rooms.set(resourceId, room);
         this.clientRooms.set(clientId, roomId);
     }
 
@@ -49,8 +47,8 @@ export class RoomRepository {
         this.clientRooms.set(clientId, roomId);
     }
 
-    getRoomByFileId(fileId: string): RoomDTO | undefined {
-        return this.rooms.get(fileId);
+    getRoomByResourceId(resourceId: string): RoomDTO | undefined {
+        return this.rooms.get(resourceId);
     }
 
     getRoomIdByClientId(clientId: string) {
@@ -79,10 +77,5 @@ export class RoomRepository {
                 this.deleteRoom(roomId);
             }
         }
-    }
-
-    isDocumentSavedInRoom(fileId: string) {
-        const room = this.getRoomByFileId(fileId);
-        return room ? room : false;
     }
 }

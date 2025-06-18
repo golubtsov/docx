@@ -51,7 +51,7 @@ export class LogicCenterService {
                           type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                       });
 
-            const docxFile = new File([docxBlob], `${room.fileId}.docx`, {
+            const docxFile = new File([docxBlob], `${room.resourceId}.docx`, {
                 type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             });
 
@@ -65,7 +65,6 @@ export class LogicCenterService {
                     headers: {
                         'Content-Type': 'multipart/form-data',
                     },
-                    validateStatus: (status) => status < 500,
                 },
             );
 

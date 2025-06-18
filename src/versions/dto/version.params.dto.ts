@@ -18,4 +18,8 @@ export class VersionParamsDto {
         message: `Значение order должно быть ${orderParams}`,
     })
     order: string = orderParams[0];
+
+    @IsOptional()
+    @IsString()
+    resourceId?: string;
 }

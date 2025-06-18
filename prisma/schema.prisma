@@ -8,10 +8,10 @@ datasource db {
 }
 
 model Version {
-  id        Int      @id @default(autoincrement())
-  file_id   String
-  name      String
-  state     String
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  resourceId String
+  name       String
+  state      String
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
 }

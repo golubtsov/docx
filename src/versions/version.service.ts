@@ -45,10 +45,10 @@ export class VersionService {
      * сохраняется снапшот между версиями в sql-бд
      */
     async saveVersion(
-        fileId: string,
+        resourceId: string,
         name?: string,
     ): Promise<CreateVersionResponse> {
-        const room = this.roomRepository.getRoomByFileId(fileId);
+        const room = this.roomRepository.getRoomByResourceId(resourceId);
 
         const lastVersion = await this.versionRepository.getLastVersion();
 
@@ -83,7 +83,7 @@ export class VersionService {
     private async createVersion(room: RoomDTO, name?: string) {
         return await this.versionRepository.createVersion(
             this.getStateFromYDocInBase64(room.ydoc),
-            room.fileId,
+            room.resourceId,
             name,
         );
     }
@@ -116,8 +116,8 @@ export class VersionService {
      * Промежуточная версия - версия, которая создается в комнате при редактировании
      * документа, не сохраняется в sql-бд, сохраняется в кэш
      */
-    async saveInterimVersion(fileId: string) {
-        const room = this.roomRepository.getRoomByFileId(fileId);
+    async saveInterimVersion(resourceId: string) {
+        const room = this.roomRepository.getRoomByResourceId(resourceId);
 
         const previousVersions =
             await this.versionRepository.getInterimVersions(room.id);
@@ -164,7 +164,7 @@ export class VersionService {
 
         return {
             id: lastVersion ? lastVersion.id + 1 : 1,
-            file_id: lastVersion?.fileId ?? room.fileId,
+            file_id: lastVersion?.resourceId ?? room.resourceId,
             state: this.getStateFromYDocInBase64(room.ydoc),
         };
     }

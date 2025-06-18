@@ -21,11 +21,16 @@ export class VersionRepository {
             ? { [params.orderBy]: params.order || 'asc' }
             : {};
 
+        const where: Prisma.VersionWhereInput = params.resourceId
+            ? { resourceId: params.resourceId }
+            : {};
+
         return this.prisma.version.findMany({
             orderBy: orderBy,
+            where: where,
             select: {
                 id: true,
-                file_id: true,
+                resourceId: true,
                 name: true,
                 updatedAt: true,
                 createdAt: true,
@@ -56,10 +61,10 @@ export class VersionRepository {
         });
     }
 
-    async createVersion(state: string, fileId: string, name?: string) {
+    async createVersion(state: string, resourceId: string, name?: string) {
         return this.prisma.version.create({
             data: {
-                file_id: fileId,
+                resourceId,
                 state,
                 name: name
                     ? name

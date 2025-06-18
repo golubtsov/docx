@@ -4,6 +4,6 @@ export interface InterimVersionsRedisDto {
 
 export interface InterimVersionRedisDto {
     id: number;
-    fileId: number;
+    resourceId: string;
     state: Uint8Array;
 }
