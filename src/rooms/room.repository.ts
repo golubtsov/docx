@@ -22,14 +22,16 @@ export class RoomRepository {
         provider: WebsocketProvider,
         ydoc: Y.Doc,
         fileId: string,
+        resourceId: string,
     ) {
         const room: RoomDTO = {
             id: roomId,
-            owner_id: clientId,
+            ownerId: clientId,
             provider,
             clients: new Set([clientId]),
             ydoc,
-            file_id: fileId,
+            fileId,
+            resourceId,
         };
         this.rooms.set(fileId, room);
         this.clientRooms.set(clientId, roomId);
@@ -77,5 +79,10 @@ export class RoomRepository {
                 this.deleteRoom(roomId);
             }
         }
+    }
+
+    isDocumentSavedInRoom(fileId: string) {
+        const room = this.getRoomByFileId(fileId);
+        return room ? room : false;
     }
 }

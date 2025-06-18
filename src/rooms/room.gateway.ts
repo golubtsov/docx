@@ -5,7 +5,7 @@ import { polyglot } from '@/common/lang/polyglot';
 import { GatewayDefaultConnections } from '@/common/app/gateway.default.connections';
 import { UseGuards } from '@nestjs/common';
 import { wsPortHelper } from '@/common/app/app.environment';
-import { CheckFileIdGuard } from '@/rooms/guards/check.file.id.guard';
+import { CheckResourceIdGuard } from '@/rooms/guards/check.resource.id.guard';
 
 @WebSocketGateway(wsPortHelper(), {
     transports: ['websocket'],
@@ -20,7 +20,7 @@ export class RoomGateway extends GatewayDefaultConnections {
         await this.roomService.disconnect(client.id);
     }
 
-    @UseGuards(CheckFileIdGuard)
+    @UseGuards(CheckResourceIdGuard)
     @SubscribeMessage('joinRoom')
     async handleJoinRoom(client: Socket, data: any) {
         try {

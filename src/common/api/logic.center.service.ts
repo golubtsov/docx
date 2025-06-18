@@ -33,8 +33,10 @@ export class LogicCenterService {
     //TODO упростить
     async updateFileFromYjs(room: RoomDTO): Promise<void> {
         try {
-            const adap = new YsyncAdapterService();
-            const componentInterface = adap.yToNode(room.ydoc.getMap('root'));
+            const adapter = new YsyncAdapterService();
+            const componentInterface = adapter.yToNode(
+                room.ydoc.getMap('root'),
+            );
 
             const ds = new DocumentService();
             await ds.setInternalDocument(componentInterface);
@@ -49,7 +51,7 @@ export class LogicCenterService {
                           type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                       });
 
-            const docxFile = new File([docxBlob], `${room.file_id}.docx`, {
+            const docxFile = new File([docxBlob], `${room.fileId}.docx`, {
                 type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             });
 
@@ -57,7 +59,7 @@ export class LogicCenterService {
             formData.append('content', docxFile);
 
             const response = await axios.patch(
-                `${this.LOGIC_CENTER_HOST}/resource/${room.file_id}`,
+                `${this.LOGIC_CENTER_HOST}/resource/${room.resourceId}`,
                 formData,
                 {
                     headers: {

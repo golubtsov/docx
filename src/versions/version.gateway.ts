@@ -4,6 +4,7 @@ import { VersionService } from '@/versions/version.service';
 import { GatewayDefaultConnections } from '@/common/app/gateway.default.connections';
 import { UseGuards } from '@nestjs/common';
 import { wsPortHelper } from '@/common/app/app.environment';
+import { CheckResourceIdGuard } from '@/rooms/guards/check.resource.id.guard';
 import { CheckFileIdGuard } from '@/rooms/guards/check.file.id.guard';
 
 @WebSocketGateway(wsPortHelper(), {
@@ -16,7 +17,7 @@ export class VersionGateway extends GatewayDefaultConnections {
     }
 
     @SubscribeMessage('saveVersion')
-    @UseGuards(CheckFileIdGuard)
+    @UseGuards(CheckResourceIdGuard, CheckFileIdGuard)
     async handlerSaveVersion(client: Socket, data: any) {
         data = JSON.parse(data);
         const response = await this.versionService.saveVersion(
@@ -27,7 +28,7 @@ export class VersionGateway extends GatewayDefaultConnections {
     }
 
     @SubscribeMessage('saveInterimVersion')
-    @UseGuards(CheckFileIdGuard)
+    @UseGuards(CheckResourceIdGuard, CheckFileIdGuard)
     async handlerSaveInterimVersion(client: Socket, data: any) {
         data = JSON.parse(data);
 

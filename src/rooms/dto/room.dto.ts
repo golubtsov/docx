@@ -3,9 +3,10 @@ import { WebsocketProvider } from 'y-websocket';
 
 export interface RoomDTO {
     id: string;
-    owner_id: string;
+    ownerId: string;
     provider: WebsocketProvider;
     ydoc: Y.Doc;
     clients: Set<string>; // client IDs
-    file_id: string;
+    fileId: string;
+    resourceId: string;
 }

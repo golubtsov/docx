@@ -82,7 +82,7 @@ export class VersionService {
     private async createVersion(room: RoomDTO, name?: string) {
         return await this.versionRepository.createVersion(
             this.getStateFromYDocInBase64(room.ydoc),
-            room.file_id,
+            room.fileId,
             name,
         );
     }
@@ -163,7 +163,7 @@ export class VersionService {
 
         return {
             id: lastVersion ? lastVersion.id + 1 : 1,
-            file_id: lastVersion?.file_id ?? room.file_id,
+            file_id: lastVersion?.fileId ?? room.fileId,
             state: this.getStateFromYDocInBase64(room.ydoc),
         };
     }

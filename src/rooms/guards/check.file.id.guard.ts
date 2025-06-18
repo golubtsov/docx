@@ -1,10 +1,14 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { LogicCenterService } from '@/common/api/logic.center.service';
 import { Socket } from 'socket.io';
+import { RoomRepository } from '@/rooms/room.repository';
 
 @Injectable()
 export class CheckFileIdGuard implements CanActivate {
-    constructor(private readonly logicCenterService: LogicCenterService) {}
+    constructor(
+        private readonly logicCenterService: LogicCenterService,
+        private readonly roomRepository: RoomRepository,
+    ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const client: Socket = context.switchToWs().getClient();
@@ -12,12 +16,29 @@ export class CheckFileIdGuard implements CanActivate {
         try {
             const data = JSON.parse(context.switchToWs().getData());
 
-            const resourceInfo = await this.logicCenterService.getResourceInfo(
-                data?.resourceId,
+            if (!data?.fileId) {
+                client.emit('guard', {
+                    message: 'Поле fileId не указано',
+                });
+                return false;
+            }
+
+            const fileInfo = await this.logicCenterService.getFileInfo(
+                data?.fileId,
             );
 
-            if (resourceInfo?.status === false) {
-                client.emit('guard', resourceInfo);
+            if (fileInfo?.status === false) {
+                client.emit('guard', fileInfo);
+                return false;
+            }
+
+            const room = this.roomRepository.isDocumentSavedInRoom(fileInfo.id);
+
+            if (!room) {
+                client.emit('guard', {
+                    status: false,
+                    message: 'Документ не открыт в комнате',
+                });
                 return false;
             }
 
@@ -26,7 +47,7 @@ export class CheckFileIdGuard implements CanActivate {
             client.emit('guard', {
                 status: false,
                 message:
-                    'Ошибка при проверки комнаты, возможно передан некорректный JSON',
+                    'Ошибка при проверки body, возможно передан некорректный JSON',
             });
             return false;
         }

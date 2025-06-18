@@ -41,8 +41,6 @@ export class RoomService {
 
         const room = this.roomRepository.getRoomByFileId(resource.content);
 
-        console.log(room?.file_id);
-
         return room
             ? this.joinInAlreadyExistsRoom(room, client, resource.content)
             : await this.createRoom(resource, client);
@@ -79,6 +77,7 @@ export class RoomService {
             provider,
             ydoc,
             resource.content,
+            resource.id,
         );
 
         return {
@@ -119,7 +118,7 @@ export class RoomService {
                 this.versionRepository.getLastInterimVersion(room.id);
 
             if (lastInterimVersion) {
-                await this.versionService.saveVersion(room.file_id);
+                await this.versionService.saveVersion(room.fileId);
             }
         }
     }
