@@ -50,7 +50,8 @@ export class VersionService {
     ): Promise<CreateVersionResponse> {
         const room = this.roomRepository.getRoomByResourceId(resourceId);
 
-        const lastVersion = await this.versionRepository.getLastVersion();
+        const lastVersion =
+            await this.versionRepository.getLastVersionByResourceId(resourceId);
 
         if (!lastVersion) {
             const version = await this.createVersion(room, name);
