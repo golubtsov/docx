@@ -55,9 +55,12 @@ export class VersionRepository {
         });
     }
 
-    async getLastVersion() {
+    async getLastVersionByResourceId(resourceId: string) {
         return this.prisma.version.findFirst({
             orderBy: { createdAt: 'desc' },
+            where: {
+                resourceId,
+            },
         });
     }
 

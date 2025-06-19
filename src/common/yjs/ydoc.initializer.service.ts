@@ -44,7 +44,8 @@ export class YDocInitializerService {
         ydoc: Doc,
         resourceId: string,
     ): Promise<void> {
-        const version = await this.versionRepository.getLastVersion();
+        const version =
+            await this.versionRepository.getLastVersionByResourceId(resourceId);
 
         if (version) {
             this.loadFromState(ydoc, version);
