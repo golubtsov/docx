@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { LogicCenterResponseErrorDto } from '@/common/api/logic.center.response.error.dto';
 import { YsyncAdapterService } from '@/common/yjs/ysync.adapter.service';
@@ -30,7 +30,6 @@ export class LogicCenterService {
         );
     }
 
-    //TODO упростить
     async updateFileFromYjs(room: RoomDTO): Promise<void> {
         try {
             const adapter = new YsyncAdapterService();
@@ -43,61 +42,59 @@ export class LogicCenterService {
 
             const blob = await ds.getBlob();
 
-            const docxBlob =
-                blob.type ===
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                    ? blob
-                    : new Blob([blob], {
-                          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                      });
+            const docxFile = this.getDocxFileFromBlob(blob, room);
 
-            const docxFile = new File([docxBlob], `${room.resourceId}.docx`, {
-                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            });
+            const response = await this.updateResource(room, docxFile);
 
-            const formData = new FormData();
-            formData.append('content', docxFile);
-
-            const response = await axios.patch(
-                `${this.LOGIC_CENTER_HOST}/resource/${room.resourceId}`,
-                formData,
-                {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                },
-            );
-
-            if (response.status >= 200 && response.status < 300) {
-                console.log(
-                    '#LogicCenter DOCX файл загружен',
-                    response.status,
-                    response.data,
-                );
-            } else {
-                console.warn(
-                    '#LogicCenter Не удалось обновить файл',
-                    response.status,
-                    response.data,
-                );
-            }
+            this.logResponse(response);
         } catch (err: unknown) {
-            if (axios.isAxiosError(err)) {
-                console.error('Network error:', err.message);
-                if (err.response) {
-                    console.error(
-                        'Server error:',
-                        err.response.status,
-                        err.response.data,
-                    );
-                }
-            } else if (err instanceof Error) {
-                console.error('Error:', err.message);
-            } else {
-                console.error('Unknown error');
-            }
             throw err;
         }
+    }
+
+    private async updateResource(room: RoomDTO, docxFile: File) {
+        const formData = new FormData();
+        formData.append('content', docxFile);
+
+        return await axios.patch(
+            `${this.LOGIC_CENTER_HOST}/resource/${room.resourceId}`,
+            formData,
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            },
+        );
+    }
+
+    private logResponse(response: AxiosResponse) {
+        if (response.status >= 200 && response.status < 300) {
+            console.log(
+                '#LogicCenter DOCX файл загружен',
+                response.status,
+                response.data,
+            );
+        } else {
+            console.warn(
+                '#LogicCenter Не удалось обновить файл',
+                response.status,
+                response.data,
+            );
+        }
+    }
+
+    private getDocxFileFromBlob(blob: Blob, room: RoomDTO) {
+        const docxBlob =
+            blob.type ===
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                ? blob
+                : new Blob([blob], {
+                      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                  });
+
+        return new File([docxBlob], `${room.resourceId}.docx`, {
+            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        });
     }
 
     async downloadFile(

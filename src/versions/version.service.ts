@@ -54,12 +54,9 @@ export class VersionService {
             await this.versionRepository.getLastVersionByResourceId(resourceId);
 
         if (!lastVersion) {
-            const version = await this.createVersion(room, name);
-
-            await this.logicCenterService.updateFileFromYjs(room);
-
-            return this.getCreateVersionResponse(
-                version,
+            return await this.handlerSaveVersion(
+                room,
+                name,
                 'Создана новая версия',
             );
         } else {
@@ -69,16 +66,25 @@ export class VersionService {
                     'Нет изменений в текущем документе, версия не создана',
                 );
             } else {
-                const version = await this.createVersion(room, name);
-
-                await this.logicCenterService.updateFileFromYjs(room);
-
-                return this.getCreateVersionResponse(
-                    version,
+                return await this.handlerSaveVersion(
+                    room,
+                    name,
                     'Создана последующая версия',
                 );
             }
         }
+    }
+
+    private async handlerSaveVersion(
+        room: RoomDTO,
+        name: string,
+        message: string,
+    ) {
+        const version = await this.createVersion(room, name);
+
+        await this.logicCenterService.updateFileFromYjs(room);
+
+        return this.getCreateVersionResponse(version, message);
     }
 
     private async createVersion(room: RoomDTO, name?: string) {
@@ -131,10 +137,7 @@ export class VersionService {
         previousVersions?: InterimVersionsRedisDto,
     ) {
         const isFirstVersion = !previousVersions;
-        const version = this.createVersionObject(
-            room,
-            isFirstVersion ? null : previousVersions,
-        );
+        const version = await this.createVersionObject(room);
 
         const versions = {
             versions: isFirstVersion
@@ -155,13 +158,10 @@ export class VersionService {
         };
     }
 
-    private createVersionObject(
-        room: RoomDTO,
-        previousVersions?: InterimVersionsRedisDto | null,
-    ) {
-        //TODO VersionRepository.getLastInterimVersion()
-        const lastVersion =
-            previousVersions?.versions[previousVersions.versions.length - 1];
+    private async createVersionObject(room: RoomDTO) {
+        const lastVersion = await this.versionRepository.getLastInterimVersion(
+            room.id,
+        );
 
         return {
             id: lastVersion ? lastVersion.id + 1 : 1,
