@@ -1,10 +1,11 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { LogicCenterResponseErrorDto } from '@/common/api/logic.center.response.error.dto';
+import { LogicCenterResponseErrorDto } from '@/common/api/dto/logic.center.response.error.dto';
 import { YsyncAdapterService } from '@/common/yjs/ysync.adapter.service';
 import { DocumentService } from '@docxservice/documentservice';
 import { RoomDTO } from '@/rooms/dto/room.dto';
 import { logicCenterUrlHelper } from '@/common/app/app.environment';
+import { SaveVersionBodyDto } from '@/common/api/dto/save.version.body.dto';
 
 @Injectable()
 export class LogicCenterService {
@@ -15,7 +16,7 @@ export class LogicCenterService {
     async getResourceInfo(
         id: string,
     ): Promise<any | LogicCenterResponseErrorDto> {
-        return await this.sendRequest(
+        return await this.getRequest(
             `${this.LOGIC_CENTER_HOST}/resource/${id}`,
             {},
             'getResourceInfo',
@@ -23,7 +24,7 @@ export class LogicCenterService {
     }
 
     async getFileInfo(id: string): Promise<any | LogicCenterResponseErrorDto> {
-        return await this.sendRequest(
+        return await this.getRequest(
             `${this.LOGIC_CENTER_HOST}/file/${id}`,
             {},
             'getFileInfo',
@@ -84,23 +85,25 @@ export class LogicCenterService {
     }
 
     private getDocxFileFromBlob(blob: Blob, room: RoomDTO) {
+        const type =
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
         const docxBlob =
-            blob.type ===
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            blob.type === type
                 ? blob
                 : new Blob([blob], {
-                      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                      type: type,
                   });
 
         return new File([docxBlob], `${room.resourceId}.docx`, {
-            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            type: type,
         });
     }
 
     async downloadFile(
         url: string,
     ): Promise<Buffer | LogicCenterResponseErrorDto> {
-        return await this.sendRequest(
+        return await this.getRequest(
             url,
             {
                 responseType: 'arraybuffer',
@@ -109,7 +112,7 @@ export class LogicCenterService {
         );
     }
 
-    private async sendRequest(
+    private async getRequest(
         url: string,
         config?: AxiosRequestConfig,
         parentMethod?: string,
@@ -132,6 +135,44 @@ export class LogicCenterService {
                 error: 'Ошибка при обращении в LogicCenter',
                 parentMethod,
             };
+        }
+    }
+
+    async getLastVersion(resourceId: string) {
+        const versions = await this.getRequest(
+            `${this.LOGIC_CENTER_HOST}/resource/${resourceId}/children`,
+            {},
+            'getLastVersion',
+        );
+
+        if (versions.length === 0) {
+            return null;
+        }
+
+        return versions[versions.length - 1];
+    }
+
+    async saveVersion(data: SaveVersionBodyDto) {
+        const formData = new FormData();
+        console.log(data.content);
+        formData.append('content', data.content);
+        formData.append('r_name', data.r_name);
+        formData.append('type', data.type);
+        formData.append('parent', data.parent);
+        formData.append('attributes', data.attributes);
+
+        try {
+            return await axios.post(
+                `${this.LOGIC_CENTER_HOST}/resource`,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                },
+            );
+        } catch (err: any) {
+            return err.message;
         }
     }
 }
