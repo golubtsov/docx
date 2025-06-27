@@ -138,18 +138,20 @@ export class LogicCenterService {
         }
     }
 
-    async getLastVersion(resourceId: string) {
-        const versions = await this.getRequest(
-            `${this.LOGIC_CENTER_HOST}/resource/${resourceId}/children`,
+    async getVersions(parentResourceId: string) {
+        return await this.getRequest(
+            `${this.LOGIC_CENTER_HOST}/versions?parent=${parentResourceId}`,
+            {},
+            'getVersions',
+        );
+    }
+
+    async getLastVersion(parentResourceId: string) {
+        return await this.getRequest(
+            `${this.LOGIC_CENTER_HOST}/versions/last/version?parent=${parentResourceId}`,
             {},
             'getLastVersion',
         );
-
-        if (versions.length === 0) {
-            return null;
-        }
-
-        return versions[versions.length - 1];
     }
 
     async saveVersion(data: SaveVersionBodyDto) {
